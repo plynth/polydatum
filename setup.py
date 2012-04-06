@@ -23,6 +23,9 @@ def main():
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
         long_description=open('README.rst').read(),
+        install_requires = [
+            'werkzeug',
+        ],        
     )
 
 if __name__ == '__main__':
