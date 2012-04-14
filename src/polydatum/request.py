@@ -1,12 +1,9 @@
-from werkzeug.local import LocalStack
-import functools
+from polydatum.globals import request
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
-_request_ctx_stack = LocalStack()
 
 class Request(object):
     def __init__(self):
@@ -31,9 +28,9 @@ class _memoize_wrapper(object):
     def __call__(self, *args, **kwargs):
         """
         Call the wrapped function, adapting if needed.
-        """        
+        """
         key = self.cache_key(*args, **kwargs)
-        mem = _request_ctx_stack.top._memory
+        mem = request._memory
         try:
             r = mem[key]
         except KeyError:
@@ -63,7 +60,7 @@ class _memoize_wrapper(object):
 
     def unmemoize(self, *args, **kwargs):
         key = self.cache_key(*args, **kwargs)
-        mem = _request_ctx_stack.top._memory
+        mem = request._memory
         if key in mem:
             del mem[key]
 
