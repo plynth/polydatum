@@ -45,7 +45,7 @@ class _memoize_wrapper(object):
 
     def __get__(self, instance, owner):
         """
-        If `memoize` is decrating a method, `_memoize_wrapper` will be a descriptor.
+        If `memoize` is decorating a method, `_memoize_wrapper` will be a descriptor.
 
         `__get__` will be called in this case which gives us an opportunity to bind to
         the instance.
@@ -59,10 +59,22 @@ class _memoize_wrapper(object):
         return self
 
     def unmemoize(self, *args, **kwargs):
+        """
+        Remove object matching key from memory.
+        """
         key = self.cache_key(*args, **kwargs)
         mem = request._memory
         if key in mem:
             del mem[key]
+
+    def forget(self, obj):
+        """
+        Remove all instances of obj from memory.
+        """
+        mem = request._memory
+        for k, v in mem.items():
+            if v == obj:
+                del mem[k]
 
 def memoize(func=None, **kwargs):
     """
