@@ -1,5 +1,5 @@
 from polydatum import DataManager, Service
-from polydatum.context import request, current_context
+from polydatum.context import current_context
 from polydatum.resources import Resource
 from uuid import uuid4
 
@@ -50,7 +50,7 @@ class MockStoreResource(Resource):
     def __call__(self, context):
         """
         Yield a connection from the pool and closed when done.
-        """
+        """ 
         connection = self._store.connect()
         try:
             yield connection

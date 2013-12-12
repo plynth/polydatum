@@ -2,21 +2,11 @@ from functools import partial
 from werkzeug.local import LocalStack, LocalProxy
 import sys
 
-def _lookup_object(name):
-    top = _request_ctx_stack.top
-    if top is None:
-        raise RuntimeError('working outside of request context')
-    return getattr(top, name)
-
-
 # context locals
 _ctx_stack = LocalStack()
 
 #: The current DataAccessContext for the active thread/context
 current_context = _ctx_stack()
-
-#: The current Request for the active thread/context
-request = LocalProxy(partial(_lookup_object, 'request'))
 
 class ErrorsOnClose(Exception):
     def __init__(self, message, exceptions):
@@ -25,9 +15,8 @@ class ErrorsOnClose(Exception):
 
 
 class DataAccessContext(object):
-    def __init__(self, data_manager, request):
+    def __init__(self, data_manager):
         self.data_manager = data_manager
-        self.request = request
         self._resources = {}
         self._resource_generators = {}
 

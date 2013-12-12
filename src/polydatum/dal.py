@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 
-from .request import Request
 from . import context
 from .resources import ResourceManager
 from .services import Service
@@ -21,7 +20,7 @@ class DataAccessLayer(object):
         return self
 
     def __getattr__(self, name):
-        assert context.current_context, 'A Request must be started to access the DAL.'
+        assert context.current_context, 'A DataAccessContext must be started to access the DAL.'
         return self._services[name]
 
     def __getitem__(self, path):
@@ -54,10 +53,7 @@ class DataManager(object):
     Registry for Services, Resources, and other DAL objects.
     """
 
-    def __init__(self, resource_manager=None, request_class=Request):
-        # Master Service that contains all other services
-        self._request_class = request_class
-
+    def __init__(self, resource_manager=None):
         if not resource_manager:
             resource_manager = ResourceManager(self)
 
@@ -83,16 +79,11 @@ class DataManager(object):
         return self._dal
 
     @contextmanager
-    def dal(self, request=None):
+    def dal(self):
         """
-        Start a new Request Context.
-
-        :param request: A Request to handle. Creates a new one if None.
+        Start a new DataAccessContext.
 
         :returns: DataAccessLayer for this DataManager
         """
-        if not request:
-            request = self._request_class()
-
-        with context.DataAccessContext(self, request):
+        with context.DataAccessContext(self):
             yield self._dal

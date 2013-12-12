@@ -1,4 +1,4 @@
-from distutils.core import setup, Command
+from distutils.core import setup
 
 def main():
 
