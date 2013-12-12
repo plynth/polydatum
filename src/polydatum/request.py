@@ -1,4 +1,4 @@
-from polydatum.globals import request
+from polydatum.context import request
 
 try:
     import cPickle as pickle
