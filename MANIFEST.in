@@ -1,0 +1,11 @@
+include README.rst VERSION.txt LICENSE
+recursive-include src *
+recursive-exclude src *.pyc
+recursive-exclude src *.pyo
+recursive-include docs *
+recursive-exclude docs *.pyc
+recursive-exclude docs *.pyo
+recursive-exclude src/tests *.pyc
+recursive-exclude src/tests *.pyo
+prune src/tests/__pycache__
+prune docs/_build
