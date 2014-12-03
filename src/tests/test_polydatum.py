@@ -146,3 +146,15 @@ def test_sub_service():
 
         profile = dal.users.profile.get(user['id'])
         assert not profile
+
+def test_unique_context():
+    """
+    Ensure that we get a new context on each DAL enter.
+    """
+    with data_manager.dal():
+        context1 = current_context._get_current_object()
+
+    with data_manager.dal():
+        context2 = current_context._get_current_object()
+
+    assert context1 != context2        

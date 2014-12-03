@@ -9,7 +9,7 @@ def main():
         version = open('VERSION.txt').read().strip(),
         author='Mike Thornton',
         author_email='six8@devdetails.com',
-        # url='http://polydatum.rtfd.org',
+        url='https://github.com/six8/polydatum',
         # download_url='http://github.com/six8/polydatum',
         keywords=['orm', 'peristance'],
         license='MIT',
