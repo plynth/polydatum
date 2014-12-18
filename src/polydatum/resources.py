@@ -32,10 +32,11 @@ class Resource(object):
         """
         yield None
 
+
 class ResourceManager(object):
     """
     Manages resouces for a DAL. Resouces can be things such
-    as database connections, caches,etc.    
+    as database connections, caches,etc.
     """
     def __init__(self, data_manager):
         self._resources = {}
@@ -50,4 +51,17 @@ class ResourceManager(object):
             resource.setup(self._data_manager)
 
     def __getitem__(self, name):
-        return self._resources[name]    
+        return self._resources[name]
+
+
+class ValueResource(Resource):
+    """
+    Resource that's just the instantiated value
+    """
+
+    def __init__(self, value):
+        super(ValueResource, self).__init__()
+        self._value = value
+
+    def __call__(self, context):
+        yield self._value
