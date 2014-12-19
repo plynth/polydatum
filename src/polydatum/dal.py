@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 from . import context
 from .resources import ResourceManager
-from .services import Service
+
 
 class DataAccessLayer(object):
     """
@@ -38,7 +38,7 @@ class DataAccessLayer(object):
         p = paths.pop(0)
         if p == 'dal':
             p = paths.pop(0)
-        loc = self._services[name]
+        loc = self._services[p]
         while 1:
             try:
                 p = paths.pop(0)
@@ -47,6 +47,7 @@ class DataAccessLayer(object):
             else:
                 loc = getattr(loc, p)
         return loc
+
 
 class DataManager(object):
     """
@@ -78,6 +79,9 @@ class DataManager(object):
     def get_dal(self):
         return self._dal
 
+    def context(self):
+        return context.DataAccessContext(self)
+
     @contextmanager
     def dal(self):
         """
@@ -85,5 +89,5 @@ class DataManager(object):
 
         :returns: DataAccessLayer for this DataManager
         """
-        with context.DataAccessContext(self):
+        with self.context():
             yield self._dal

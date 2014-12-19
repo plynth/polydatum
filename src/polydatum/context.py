@@ -1,5 +1,4 @@
-from functools import partial
-from werkzeug.local import LocalStack, LocalProxy
+from werkzeug.local import LocalStack
 import sys
 
 # context locals
@@ -8,10 +7,19 @@ _ctx_stack = LocalStack()
 #: The current DataAccessContext for the active thread/context
 current_context = _ctx_stack()
 
+
+def get_active_context():
+    """
+    Safely checks if there's a context active
+    and returns it
+    """
+    if _ctx_stack.top:
+        return _ctx_stack.top
+
 class ErrorsOnClose(Exception):
     def __init__(self, message, exceptions):
         super(Exception, self).__init__(message)
-        self.exceptions = exceptions    
+        self.exceptions = exceptions
 
 
 class DataAccessContext(object):
@@ -20,40 +28,47 @@ class DataAccessContext(object):
         self._resources = {}
         self._resource_generators = {}
 
-    def __enter__(self):        
+    def __enter__(self):
         """
         Open the context and put it on the stack
         """
         _ctx_stack.push(self)
+        self._setup_hook()
         return self
 
     def __exit__(self, exc_type=None, exc_value=None, traceback=None):
         """
-        Close all open resources and 
+        Close all open resources and
         remove context from stack
         """
 
         if exc_type is not None and exc_value is None:
             # Need to force instantiation so we can reliably
             # tell if we get the same exception back
-            exc_value = type()        
-        
+            exc_value = exc_type()
+
         try:
-            exc_infos = []
-            for resource_generator in self._resource_generators.values():
-                try:
-                    self._exit_resource(resource_generator, exc_type, exc_value, traceback)
-                except:
-                    exc_type, exc, tb = sys.exc_info()
-                    exc_infos.append((exc_type, exc, tb))
-
-            if exc_infos:
-                if len(exc_infos) == 1:
-                    raise exc_infos[0][0], exc_infos[0][1], exc_infos[0][2]
-
-                raise ErrorsOnClose('Got multiple errors while closing resources', exc_infos)
+            self._teardown_hook(exc_value)
         finally:
-            _ctx_stack.pop()
+            try:
+                exc_infos = []
+                for resource_generator in self._resource_generators.values():
+                    try:
+                        self._exit_resource(resource_generator, exc_type, exc_value, traceback)
+                    except:
+                        exc_type, exc, tb = sys.exc_info()
+                        exc_infos.append((exc_type, exc, tb))
+
+                if exc_infos:
+                    if len(exc_infos) == 1:
+                        raise exc_infos[0][0], exc_infos[0][1], exc_infos[0][2]
+
+                    raise ErrorsOnClose('Got multiple errors while closing resources', exc_infos)
+            finally:
+                try:
+                    self._final_hook(exc_value)
+                finally:
+                    _ctx_stack.pop()
 
     def _exit_resource(self, resource, type, value, traceback):
         if type is None:
@@ -96,4 +111,30 @@ class DataAccessContext(object):
             # Iterate the generator to open the resource
             self._resources[name] = self._resource_generators[name].next()
 
-        return self._resources[name]        
+        return self._resources[name]
+
+    def _teardown_hook(self, exception):
+        """
+        Handle any thing that needs to happen before teardown
+        of the context
+
+        :param exception: An exception if there was an uncaught one during the
+            context lifetime.
+        """
+        pass
+
+    def _setup_hook(self):
+        """
+        Handle any thing that needs to happen before start of the context.
+        """
+        pass
+
+    def _final_hook(self, exception):
+        """
+        Handle any thing that needs to happen at the end of the context.
+        """
+        pass
+
+    @property
+    def dal(self):
+        return self.data_manager.get_dal()
