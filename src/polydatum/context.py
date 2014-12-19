@@ -7,6 +7,15 @@ _ctx_stack = LocalStack()
 #: The current DataAccessContext for the active thread/context
 current_context = _ctx_stack()
 
+
+def get_active_context():
+    """
+    Safely checks if there's a context active
+    and returns it
+    """
+    if _ctx_stack.top:
+        return _ctx_stack.top
+
 class ErrorsOnClose(Exception):
     def __init__(self, message, exceptions):
         super(Exception, self).__init__(message)
