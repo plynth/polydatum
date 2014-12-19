@@ -4,7 +4,7 @@ from polydatum.resources import Resource
 from uuid import uuid4
 
 class MockStoreConnection(object):
-    def __init__(self, store):        
+    def __init__(self, store):
         self._store = store
 
     def get(self, item_id):
@@ -20,10 +20,10 @@ class MockStoreConnection(object):
         if not record.get('id', None):
             record['id'] = str(uuid4())
 
-        self._store._data[record['id']] = record        
+        self._store._data[record['id']] = record
         return record
 
-    def close(self):        
+    def close(self):
         self._store._pool.append(self)
 
 
@@ -50,15 +50,15 @@ class MockStoreResource(Resource):
     def __call__(self, context):
         """
         Yield a connection from the pool and closed when done.
-        """ 
+        """
         connection = self._store.connect()
         try:
             yield connection
         finally:
             connection.close()
 
-class UserService(Service): 
-    @property 
+class UserService(Service):
+    @property
     def _store(self):
         return current_context.user_db
 
@@ -79,7 +79,7 @@ class UserService(Service):
         return user
 
 class UserProfileService(Service):
-    @property 
+    @property
     def _store(self):
         return current_context.user_profile_db
 
@@ -142,7 +142,7 @@ def test_sub_service():
         assert profile['uuid'] == uuid
 
         deleted = dal.users.delete(user['id'])
-        assert deleted        
+        assert deleted
 
         profile = dal.users.profile.get(user['id'])
         assert not profile
@@ -151,10 +151,11 @@ def test_unique_context():
     """
     Ensure that we get a new context on each DAL enter.
     """
+    data_manager = get_dam()
     with data_manager.dal():
         context1 = current_context._get_current_object()
 
     with data_manager.dal():
         context2 = current_context._get_current_object()
 
-    assert context1 != context2        
+    assert context1 != context2
