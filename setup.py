@@ -11,7 +11,7 @@ def main():
         author_email='six8@devdetails.com',
         url='https://github.com/six8/polydatum',
         # download_url='http://github.com/six8/polydatum',
-        keywords=['orm', 'peristance'],
+        keywords=['orm', 'persistence'],
         license='MIT',
         description='An encapsulated persistance layer for Python',
         classifiers = [
@@ -25,7 +25,7 @@ def main():
         long_description=open('README.rst').read(),
         install_requires = [
             'werkzeug',
-        ],        
+        ],
     )
 
 if __name__ == '__main__':
