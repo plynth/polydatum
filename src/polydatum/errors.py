@@ -11,6 +11,10 @@ class NotFound(ServiceError):
 
 
 class ErrorsOnClose(PolydatumException):
+    """
+    Deprecated 0.8.4 as Resources errors on exit
+    are suppressed
+    """
     def __init__(self, message, exceptions):
         super(Exception, self).__init__(message)
         self.message = message
