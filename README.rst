@@ -8,13 +8,19 @@ A Python encapsulated persistence layer for supporting many data access layers.
 Components
 ----------
 
+### DataManager
+
+The DataManager is the central object of Polydatum. It is a top-level registry for
+Services, Resources, and Middleware. Typically an application has one DataManager
+per process. The DataManager also manages Contexts and gives access the DAL.
+
+
 ### Context
 
-The Context contains the current state for the active request. It should contain
-all meta data associated with the request such as active user and HTTP request
-parameters. It also provides access to Resources. When used in an HTTP framework
-typically one context is created at the start of the HTTP request and it ends
-before the HTTP response is sent.
+The Context contains the current state for the active request. It also provides
+access to Resources. When used in an HTTP framework typically one context is
+created at the start of the HTTP request and it ends before the HTTP response
+is sent.
 
 When used with task managers such as Celery, the Context is created at the
 start of a task and ends before the task result is returned.
