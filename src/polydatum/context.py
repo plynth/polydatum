@@ -1,9 +1,7 @@
 import json
 from werkzeug.local import LocalStack
 import sys
-
-# context locals
-from .errors import MiddlewareSetupException, ErrorsOnClose
+from .errors import MiddlewareSetupException, ResourceSetupException
 
 # Deprecated (0.8.4) in preference of accessing stack on DataManager
 _ctx_stack = LocalStack()
@@ -98,6 +96,20 @@ class DataAccessContext(object):
         self._resource_generators = {}
         self._middleware = {}
         self._middleware_generators = None
+        self._resource_exit_errors = []
+        self._state = 'created'
+
+    def get_resource_exit_errors(self):
+        """
+        Returns a list of errors that occurred during resource exit. In
+        general, Resources should handler their own errors and raise none,
+        however nothing prevents them from doing so. Errors are collected
+        and available here for handling/logging.
+
+        :returns: List of ``sys.exc_info()`` for each exception:
+            [(exc_type, exc_value, traceback)]
+        """
+        return self._resource_exit_errors
 
     def _setup(self):
         """
@@ -128,6 +140,10 @@ class DataAccessContext(object):
         """
         Open the context and put it on the stack
         """
+        if self._state != 'created':
+            raise RuntimeError('Context may only be used once')
+
+        self._state = 'setup'
         try:
             self._setup()
         except:
@@ -139,6 +155,8 @@ class DataAccessContext(object):
             else:
                 raise
 
+        self._state = 'active'
+
         return self
 
     def __exit__(self, exc_type=None, exc_value=None, traceback=None):
@@ -146,68 +164,103 @@ class DataAccessContext(object):
         Close all open resources, middleware and
         remove context from stack
 
-        If a Resource raises an exception, it is collected and all
-        other Resource will still close. The exceptions then will be
-        raised as an ``ErrorsOnClose``.
+        In-context exceptions (exceptions raised between ``__enter__``
+        and ``__exit__``) are propagated to Middleware, Resources, and
+        eventually raised outside the ``DataAccessContext``. Resources
+        are created in-context so if a Resource raises an exception
+        during setup, it treated the same as all in-context exceptions.
 
-        TODO Should Middleware propagate exceptions or ignore?
+        Middleware may suppress or replace the in-context exception. If
+        there is an unhandled exception raised in-context or by middleware
+        it is guaranteed to be raised outside the ``DataAccessContext``.
+
+        If a Resource raises an exception, it is collected and all
+        other Resource will still close. Resource exit exceptions do not
+        propagate. The Resource will only see the in-context/middleware
+        exception. To access Resource exit exceptions, use
+        ``DataAccessContext.get_resource_exit_errors()``.
         """
+        assert self._state in ('active', 'setup'), 'Context must be active to exit it'
+        self._state = 'exiting'
+
         if exc_type is not None and exc_value is None:
             # Need to force instantiation so we can reliably
             # tell if we get the same exception back
             exc_value = exc_type()
 
+        # Tear down all the middleware. The original in-context exception is
+        # first passed to the middleware, but if middleware raises a
+        # different exception it is passed up the middleware chain and
+        # replaces the current exception
+        generators, self._middleware_generators = self._middleware_generators, None
+        while generators:
+            __, generator = generators.pop()
+            try:
+                if self._exit(generator, exc_type, exc_value, traceback):
+                    # Exception was suppressed
+                    exc_type, exc_value, traceback = (None, None, None)
+            except:
+                # New exception raised, use it instead
+                exc_type, exc_value, traceback = sys.exc_info()
+                exc_value = exc_value or exc_type()
+
         try:
             self._teardown_hook(exc_value)
+        except:
+            # Teardown hook exceptions are trapped and
+            # stored as a resource exit error.
+            self._resource_exit_errors.append(sys.exc_info())
         finally:
+            # Tear down all the resources and don't
+            # propagate resource exceptions to other resources.
+            # Resource exit exceptions are not raised, instead they
+            # are collected and available with ``get_resource_exit_errors()``.
+            resources, self._resource_generators = self._resource_generators, None
+            while resources:
+                __, resource_generator = resources.popitem()
+
+                try:
+                    self._exit(resource_generator, exc_type, exc_value, traceback)
+                except:
+                    self._resource_exit_errors.append(sys.exc_info())
+
             try:
-                exc_infos = []
-                # Tear down all the middleware
-                for __, generator in reversed(self._middleware_generators):
-                    try:
-                        self._exit_resource(generator, exc_type, exc_value, traceback)
-                    except:
-                        exc_type, exc, tb = sys.exc_info()
-                        exc_infos.append((exc_type, exc, tb))
+                if exc_type:
+                    # An in-context or middleware exception
+                    # occurred and will be raised outside the context
+                    raise exc_type, exc_value, traceback
 
-                # Tear down all the resources
-                for resource_generator in self._resource_generators.values():
-                    try:
-                        self._exit_resource(resource_generator, exc_type, exc_value, traceback)
-                    except:
-                        exc_type, exc, tb = sys.exc_info()
-                        exc_infos.append((exc_type, exc, tb))
-
-                if exc_infos:
-                    raise ErrorsOnClose('Got multiple errors while closing resources', exc_infos)
             finally:
                 try:
                     self._final_hook(exc_value)
                 finally:
                     self.data_manager.ctx_stack.pop()
+                    self._state = 'exited'
 
-    def _exit_resource(self, resource, type, value, traceback):
+    def _exit(self, obj, type, value, traceback):
         """
         Teardown a Resource or Middleware.
         """
         if type is None:
+            # No in-context exception occurred
             try:
-                resource.next()
+                obj.next()
             except StopIteration:
                 # Resource closed as expected
                 return
             else:
-                raise RuntimeError('Resource generator yielded more than once.')
+                raise RuntimeError('{} yielded more than once.'.format(obj))
         else:
+            # In-context exception occurred
             try:
-                resource.throw(type, value, traceback)
-                raise RuntimeError('Resource generator did not close after throw()')
+                obj.throw(type, value, traceback)
+                raise RuntimeError('{} did not close after throw()'.format(obj))
             except StopIteration as exc:
                 # Suppress the exception *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed
                 return exc is not value
-            except Exception as e:
+            except:
                 # only re-raise if it's *not* the exception that was
                 # passed to throw(), because __exit__() must not raise
                 # an exception unless __exit__() itself failed.  But
@@ -227,6 +280,9 @@ class DataAccessContext(object):
         Gets a Resource from the DataManager and initializes
         it for the request.
         """
+        if self._state != 'active':
+            raise RuntimeError('Resources can only be used on an active context')
+
         if name not in self._resources:
             resource = self.data_manager.get_resource(name)
             if resource:
@@ -234,7 +290,12 @@ class DataAccessContext(object):
                 self._resource_generators[name] = resource(self)
 
                 # Iterate the generator to open the resource
-                self._resources[name] = self._resource_generators[name].next()
+                try:
+                    self._resources[name] = self._resource_generators[name].next()
+                except StopIteration:
+                    # Resource didn't want to setup, but did not
+                    # raise an exception. Why not?
+                    raise ResourceSetupException('Resource {} did not yield on setup.'.format(resource))
             else:
                 raise AttributeError('No resource named "{}" for context.'.format(name))
 

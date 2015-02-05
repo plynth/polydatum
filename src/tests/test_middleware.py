@@ -1,5 +1,5 @@
 from polydatum import DataManager, Service
-from polydatum.errors import MiddlewareSetupException, ErrorsOnClose
+from polydatum.errors import MiddlewareSetupException
 from polydatum.resources import ValueResource
 import pytest
 
@@ -22,13 +22,13 @@ def test_middleware():
     """
     class TestMiddleware(object):
         """
-        Example middleware that closes a transaction
-        if one has been started.
+        Example middleware that sets it's state at
+        setup and teardown.
         """
         def __call__(self, context):
-            context.store['state'] = 'start'
+            context.store['state'] = 'setup'
             yield
-            context.store['state'] = 'done'
+            context.store['state'] = 'torndown'
 
     data_store = {}
 
@@ -43,11 +43,11 @@ def test_middleware():
     )
 
     with data_manager.dal() as dal:
-        assert dal.test.get_state() == 'start'
+        assert dal.test.get_state() == 'setup'
         dal.test.change_state('middle')
         assert dal.test.get_state() == 'middle'
 
-    assert data_store['state'] == 'done'
+    assert data_store['state'] == 'torndown'
 
 
 def test_middleware_that_does_not_yield():
@@ -75,7 +75,7 @@ def test_middleware_that_does_not_yield():
 
 def test_middleware_that_yields_too_much():
     """
-    Verify that middleware that does yields more
+    Verify that middleware that yields more
     than once raises a RuntimeError
     """
     def chatty_middleware(context):
@@ -88,12 +88,9 @@ def test_middleware_that_yields_too_much():
     data_manager = DataManager()
     data_manager.register_context_middleware(chatty_middleware)
 
-    try:
+    with pytest.raises(RuntimeError):
         with data_manager.dal():
             pass
-        pytest.fail('Did not raise')
-    except ErrorsOnClose as e:
-        assert e.exceptions[0][0] is RuntimeError
 
 
 def test_middleware_that_has_setup_error():
