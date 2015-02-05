@@ -4,7 +4,6 @@ Polydatum
 
 A Python encapsulated persistence layer for supporting many data access layers.
 
-Very rough at the moment, only offers basic functionality.
 
 Components
 ----------
@@ -45,6 +44,25 @@ MVC-like applications. Services can be nested within other services.
     )
 
     result = dal.someservice.subservice.somemethod()
+
+
+### Meta
+
+Meta is data about the context and usually includes things like the active
+user or HTTP request. Meta is read only and can not be modified inside the
+context.
+
+::
+
+    class UserService(Service):
+        def get_user(self):
+            return self._ctx.meta.user
+
+    dm = DataManager()
+    dm.register_services(users=UserService())
+
+    with dm.context(meta={'user': 'bob'}) as ctx:
+        assert ctx.dal.test.get_user() == 'bob'
 
 
 ### Resource
@@ -91,7 +109,7 @@ Context, Context Middleware can gain access to Resources.
 ::
 
     def transaction_middleware(context):
-        trans = new_transaction()
+        trans = context.db_resource.new_transaction()
         trans.start()
         try:
             yield trans
@@ -108,18 +126,24 @@ Principals
 ----------
 
 - Methods that get an object should return `None` if an object can not be found.
-- Methods that rely on an object existing to work (such as `create` that relies on a parent object) should raise `NotFound` if the parent object does not exist.
+- Methods that rely on an object existing to work (such as `create` that relies
+  on a parent object) should raise `NotFound` if the parent object does not exist.
 - All data access (SQL, MongoDB, Redis, S3, etc) must be done within a Service.
+
 
 Considerations
 --------------
 
 ### Middleware vs Resource
 
-A Resource is created on demand. It's purpose is to create
-a needed resource for a request and clean it up when done.
-Middleware is ran on every context. It's purpose is to
-do setup/teardown within the context.
+A Resource is created on demand. It's purpose is to create a needed resource
+for a request and clean it up when done. It is created inside the context (and possibly
+by middleware). Errors that occur during Resource teardown are suppressed.
+
+Middleware is ran on every context. It is setup before the context is active and
+torndown before resources are torndown. It's purpose is to do setup/teardown within
+the context. Errors that occur in-context are propagated to middleware. Errors that
+occur in middleware are also propagated.
 
 
 Testing

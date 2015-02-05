@@ -1,3 +1,7 @@
+from polydatum.errors import AlreadyExistsException
+from polydatum.util import is_generator
+
+
 class Resource(object):
     # Deprecated 0.8.4
     _data_manager = None
@@ -51,11 +55,35 @@ class ResourceManager(object):
         """
         Register resources with the ResourceManager.
         """
-        for name, resource in resources.items():
-            self._resources[name] = resource
-            if hasattr(resource, 'setup') and callable(resource.setup):
-                # Setup is deprecated as of 0.8.4
-                resource.setup(self._data_manager)
+        for key, resource in resources.items():
+            if key in self._resources:
+                raise AlreadyExistsException('A Service for {} is already registered.'.format(key))
+
+            self._init_resource(key, resource)
+
+    def replace_resource(self, key, resource):
+        """
+        Replace a Resource with another. Usually this is a bad
+        idea but is often done in testing to replace a Resource
+        with a mock version. It's also used for practical
+        reasons if you need to swap out resources for different
+        framework implementations (ex: Greenlet version vs
+        threaded)
+
+        :param key: Name of resource
+        :param resource: Resource
+        """
+        return self._init_resource(key, resource)
+
+    def _init_resource(self, key, resource):
+        if not is_generator(resource):
+            raise Exception('Resource {}:{} must be a Python generator callable.'.format(key, resource))
+
+        if hasattr(resource, 'setup') and callable(resource.setup):
+            # Setup is deprecated as of 0.8.4
+            resource.setup(self._data_manager)
+
+        self._resources[key] = resource
 
     def __getitem__(self, name):
         """

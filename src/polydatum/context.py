@@ -94,7 +94,6 @@ class DataAccessContext(object):
         self.meta = meta if isinstance(meta, Meta) else Meta(meta)
         self._resources = {}
         self._resource_generators = {}
-        self._middleware = {}
         self._middleware_generators = None
         self._resource_exit_errors = []
         self._state = 'created'
@@ -280,10 +279,13 @@ class DataAccessContext(object):
         Gets a Resource from the DataManager and initializes
         it for the request.
         """
-        if self._state != 'active':
-            raise RuntimeError('Resources can only be used on an active context')
+        if self._state not in ('active', 'setup', 'exiting'):
+            raise RuntimeError('Resources can only be used during an active context')
 
         if name not in self._resources:
+            if self._state not in ('active', 'setup'):
+                raise RuntimeError('Resources can only be created during an active context')
+
             resource = self.data_manager.get_resource(name)
             if resource:
                 # Call the resource to get a resource generator

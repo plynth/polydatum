@@ -24,6 +24,12 @@ class ErrorsOnClose(PolydatumException):
         )
 
 
+class AlreadyExistsException(PolydatumException):
+    """
+    Service, middleware, or resource already exists
+    """
+
+
 class MiddlewareException(PolydatumException):
     pass
 

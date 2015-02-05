@@ -1,8 +1,10 @@
 from contextlib import contextmanager
-from inspect import isgeneratorfunction
 from .context import DataAccessContext
+from polydatum.errors import AlreadyExistsException
+from polydatum.util import is_generator
 from .resources import ResourceManager
 from .context import _ctx_stack
+
 
 class DataAccessLayer(object):
     """
@@ -14,10 +16,38 @@ class DataAccessLayer(object):
         self._data_manager = data_manager
 
     def register_services(self, **services):
+        """
+        Register Services that can be accessed by this DAL. Upon
+        registration, the service is set up.
+
+        :param **services: Keyword arguments where the key is the name
+          to register the Service as and the value is the Service.
+        """
         for key, service in services.items():
-            service.setup(self._data_manager)
-            self._services[key] = service
+            if key in self._services:
+                raise AlreadyExistsException('A Service for {} is already registered.'.format(key))
+
+            self._init_service(key, service)
         return self
+
+    def replace_service(self, key, service):
+        """
+        Replace a Service with another. Usually this is a bad
+        idea but is often done in testing to replace a Service
+        with a mock version. It's also used for practical
+        reasons if you need to swap out services for different
+        framework implementations (ex: Greenlet version vs
+        threaded)
+
+        :param key: Name of service
+        :param service: Service
+        """
+        return self._init_service(key, service)
+
+    def _init_service(self, key, service):
+        service.setup(self._data_manager)
+        self._services[key] = service
+        return service
 
     def __getattr__(self, name):
         assert self._data_manager.get_active_context(), 'A DataAccessContext must be started to access the DAL.'
@@ -65,19 +95,13 @@ class DataManager(object):
         # TODO Make _ctx_stack only exist on the DataManager
         self.ctx_stack = _ctx_stack
 
-    def _is_generator(self, obj):
-        return callable(obj) and (
-            isgeneratorfunction(obj) or
-            isgeneratorfunction(getattr(obj, '__call__'))
-        )
-
     def register_context_middleware(self, *middleware):
         """
         :param middleware: Middleware in order of execution
         """
         for m in middleware:
-            if not self._is_generator(m):
-                raise Exception('Middleware %s must be a Python generator callable.' % m)
+            if not is_generator(m):
+                raise Exception('Middleware {} must be a Python generator callable.'.format(m))
 
         self._middleware.extend(middleware)
 
@@ -94,17 +118,25 @@ class DataManager(object):
         """
         Register Resources with the ResourceManager.
         """
-        for name, r in resources.items():
-            if not self._is_generator(r):
-                raise Exception('Resource %s:%s must be a Python generator callable.' % (name, r))
-
         self._resource_manager.register_resources(**resources)
+
+    def replace_resource(self, key, resource):
+        """
+        Replace a Resources on the ResourceManager.
+        """
+        self._resource_manager.replace_resource(key, resource)
 
     def register_services(self, **services):
         """
         Register Services with the DataAccessLayer
         """
         self._dal.register_services(**services)
+
+    def replace_service(self, key, service):
+        """
+        Replace a Service on the DataAccessLayer
+        """
+        self._dal.replace_service(key, service)
 
     def get_resource(self, name):
         if name in self._resource_manager:
