@@ -1,6 +1,6 @@
 class Service(object):
     def __init__(self):
-        self._services = {}     
+        self._services = {}
         self._data_manager = None
         self._dal = None
 
@@ -27,3 +27,13 @@ class Service(object):
 
         for key, service in self._services.items():
             service.setup(self._data_manager)
+
+    @property
+    def _ctx(self):
+        """
+        Returns the current DataAccessContext.
+
+        :return: DataAccessContext
+        :raises: RuntimeError if no context is active
+        """
+        return self._data_manager.ctx_stack()._get_current_object()

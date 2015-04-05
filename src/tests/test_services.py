@@ -1,7 +1,7 @@
 from polydatum import DataManager, Service
-from polydatum.context import current_context
 from polydatum.resources import Resource
 from uuid import uuid4
+
 
 class MockStoreConnection(object):
     def __init__(self, store):
@@ -42,6 +42,7 @@ class MockStore(object):
         # Get a connection from a pool
         return self._pool.pop()
 
+
 class MockStoreResource(Resource):
     def __init__(self, store):
         super(MockStoreResource, self).__init__()
@@ -57,10 +58,11 @@ class MockStoreResource(Resource):
         finally:
             connection.close()
 
+
 class UserService(Service):
     @property
     def _store(self):
-        return current_context.user_db
+        return self._ctx.user_db
 
     def get(self, id):
         return self._store.get(id)
@@ -78,10 +80,11 @@ class UserService(Service):
         self._store.save(user)
         return user
 
+
 class UserProfileService(Service):
     @property
     def _store(self):
-        return current_context.user_profile_db
+        return self._ctx.user_profile_db
 
     def get(self, user_id):
         return self._store.get(user_id)
@@ -93,6 +96,7 @@ class UserProfileService(Service):
 
     def delete(self, user_id):
         return self._store.delete(user_id)
+
 
 def get_dam():
     data_manager = DataManager()
@@ -107,7 +111,11 @@ def get_dam():
     )
     return data_manager
 
+
 def test_service():
+    """
+    Verify simple service CRUD
+    """
     data_manager = get_dam()
     with data_manager.dal() as dal:
         user = {
@@ -124,7 +132,11 @@ def test_service():
         deleted = dal.users.delete(saved_user['id'])
         assert deleted
 
+
 def test_sub_service():
+    """
+    Verify a sub-service is callable
+    """
     data_manager = get_dam()
     with data_manager.dal() as dal:
         user = {
@@ -146,16 +158,3 @@ def test_sub_service():
 
         profile = dal.users.profile.get(user['id'])
         assert not profile
-
-def test_unique_context():
-    """
-    Ensure that we get a new context on each DAL enter.
-    """
-    data_manager = get_dam()
-    with data_manager.dal():
-        context1 = current_context._get_current_object()
-
-    with data_manager.dal():
-        context2 = current_context._get_current_object()
-
-    assert context1 != context2
