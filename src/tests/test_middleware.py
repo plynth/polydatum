@@ -4,7 +4,7 @@ from polydatum.resources import ValueResource
 import pytest
 
 
-class TestService(Service):
+class StateTestService(Service):
     def ping(self):
         return 'PONG'
 
@@ -33,7 +33,7 @@ def test_middleware():
     data_store = {}
 
     data_manager = DataManager()
-    data_manager.register_services(test=TestService())
+    data_manager.register_services(test=StateTestService())
     # Middleware that starts and ends with the context
     data_manager.register_context_middleware(
         TestMiddleware(),
@@ -65,7 +65,7 @@ def test_middleware_that_does_not_yield():
             yield
 
     data_manager = DataManager()
-    data_manager.register_services(test=TestService())
+    data_manager.register_services(test=StateTestService())
     data_manager.register_context_middleware(bogus_middleware)
 
     with pytest.raises(MiddlewareSetupException):
@@ -107,7 +107,7 @@ def test_middleware_that_has_setup_error():
         yield
 
     data_manager = DataManager()
-    data_manager.register_services(test=TestService())
+    data_manager.register_services(test=StateTestService())
     data_manager.register_context_middleware(error_middleware)
 
     with pytest.raises(SetupError):

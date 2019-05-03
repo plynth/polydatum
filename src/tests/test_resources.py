@@ -1,18 +1,7 @@
-from polydatum import DataManager, Service
+from polydatum import DataManager
 from polydatum.errors import ResourceSetupException
 from polydatum.resources import ValueResource
 import pytest
-
-
-class TestService(Service):
-    def ping(self):
-        return 'PONG'
-
-    def change_state(self, state):
-        self._ctx.store['state'] = state
-
-    def get_state(self):
-        return self._ctx.store['state']
 
 
 def test_resource_setup_and_teardown():
