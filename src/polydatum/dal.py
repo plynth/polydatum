@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from contextlib import contextmanager
 from .context import DataAccessContext
 from polydatum.errors import AlreadyExistsException

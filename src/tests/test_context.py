@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from polydatum.context import DataAccessContext
 from polydatum import DataManager, Service
 import pytest

@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import json
 from werkzeug.local import LocalStack
 import sys
 from .errors import MiddlewareSetupException, ResourceSetupException
+import six
 
 # Deprecated (0.8.4) in preference of accessing stack on DataManager
 _ctx_stack = LocalStack()
@@ -67,7 +69,7 @@ class Meta(object):
             yield k, v
 
     def __str__(self):
-        return json.dumps(dict(self.items()), indent=2)
+        return json.dumps(dict(list(self.items())), indent=2)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self)
@@ -129,7 +131,7 @@ class DataAccessContext(object):
 
         for middleware, generator in self._middleware_generators:
             try:
-                generator.next()
+                next(generator)
             except StopIteration:
                 # Middleware didn't want to setup, but did not
                 # raise an exception. Why not?
@@ -227,7 +229,7 @@ class DataAccessContext(object):
                 if exc_type:
                     # An in-context or middleware exception
                     # occurred and will be raised outside the context
-                    raise exc_type, exc_value, traceback
+                    six.reraise(exc_type, exc_value, traceback)
 
             finally:
                 try:
@@ -243,7 +245,7 @@ class DataAccessContext(object):
         if type is None:
             # No in-context exception occurred
             try:
-                obj.next()
+                next(obj)
             except StopIteration:
                 # Resource closed as expected
                 return
@@ -293,7 +295,7 @@ class DataAccessContext(object):
 
                 # Iterate the generator to open the resource
                 try:
-                    self._resources[name] = self._resource_generators[name].next()
+                    self._resources[name] = next(self._resource_generators[name])
                 except StopIteration:
                     # Resource didn't want to setup, but did not
                     # raise an exception. Why not?
