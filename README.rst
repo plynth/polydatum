@@ -2,6 +2,10 @@
 Polydatum
 =========
 
+.. image:: https://secure.travis-ci.org/six8/polydatum.png
+    :target: http://travis-ci.org/six8/polydatum
+    :alt: Build Status
+
 A Python encapsulated persistence layer for supporting many data access layers.
 
 
