@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from polydatum import DataManager, Service
 from polydatum.errors import MiddlewareSetupException
 from polydatum.resources import ValueResource

@@ -1,5 +1,7 @@
+from __future__ import absolute_import
 import importlib
 import json
+import six
 
 
 class Config(object):
@@ -9,7 +11,7 @@ class Config(object):
     """
     def __init__(self, opts=None):
         if opts:
-            for k, v in opts.iteritems():
+            for k, v in six.iteritems(opts):
                 object.__setattr__(self, k, v)
 
     def __setattr__(self, key, value):
@@ -33,7 +35,7 @@ class Config(object):
                 yield (k, self.get(k))
 
     def __str__(self):
-        return json.dumps(dict(self.items()), indent=2)
+        return json.dumps(dict(list(self.items())), indent=2)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self)

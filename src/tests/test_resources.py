@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from polydatum import DataManager
 from polydatum.errors import ResourceSetupException
 from polydatum.resources import ValueResource

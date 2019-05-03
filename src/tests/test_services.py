@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from polydatum import DataManager, Service
 from polydatum.resources import Resource
 from uuid import uuid4

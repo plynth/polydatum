@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from polydatum.errors import AlreadyExistsException
 from polydatum.util import is_generator
 

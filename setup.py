@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from distutils.core import setup
 
 def main():
@@ -24,6 +25,7 @@ def main():
         ],
         long_description=open('README.rst').read(),
         install_requires = [
+            'six==1.12.0',
             'werkzeug',
         ],
     )
