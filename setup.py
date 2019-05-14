@@ -7,6 +7,7 @@ if sys.argv[-1] in ('build', 'publish'):
         'rst_include include -s ./_README.rst -t ./README.rst', shell=True)
     check_call('python setup.py sdist bdist_wheel', shell=True)
     if sys.argv[-1] == 'publish':
+        check_call('twine check dist/*', shell=True)
         check_call('twine upload dist/*', shell=True)
     sys.exit()
 
@@ -21,7 +22,6 @@ def main():
         author='Mike Thornton',
         author_email='six8@devdetails.com',
         url='https://github.com/plynth/polydatum',
-        # download_url='http://github.com/six8/polydatum',
         keywords=['orm', 'persistence'],
         license='MIT',
         description='An encapsulated persistance layer for Python',
@@ -38,6 +38,7 @@ def main():
             'Programming Language :: Python :: 3.7',            
         ],
         long_description=open('README.rst').read(),
+        long_description_content_type='text/x-rst',
         install_requires = [
             'six==1.12.0',
             'werkzeug',

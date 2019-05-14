@@ -2,8 +2,8 @@
 Polydatum
 =========
 
-.. image:: https://secure.travis-ci.org/six8/polydatum.png
-    :target: http://travis-ci.org/six8/polydatum
+.. image:: https://secure.travis-ci.org/plynth/polydatum.png
+    :target: http://travis-ci.org/plynth/polydatum
     :alt: Build Status
 
 A Python encapsulated persistence layer for supporting many data access layers.
@@ -37,14 +37,16 @@ Bug Fixes
 Components
 ----------
 
-### DataManager
+DataManager
+===========
 
 The DataManager is the central object of Polydatum. It is a top-level registry for
 Services, Resources, and Middleware. Typically an application has one DataManager
 per process. The DataManager also manages Contexts and gives access the DAL.
 
 
-### Context
+Context
+=======
 
 The Context contains the current state for the active request. It also provides
 access to Resources. When used in an HTTP framework typically one context is
@@ -55,7 +57,8 @@ When used with task managers such as Celery, the Context is created at the
 start of a task and ends before the task result is returned.
 
 
-### DAL
+DAL
+===
 
 The DAL is the "Data Access Layer". The DAL is the registry for all Services.
 To make call a method on a Service, you start with the DAL.
@@ -65,7 +68,8 @@ To make call a method on a Service, you start with the DAL.
     result = dal.someservice.somemethod()
 
 
-### Service
+Service
+=======
 
 Services encapsulate business logic and data access. They are the Controller of
 MVC-like applications. Services can be nested within other services.
@@ -81,7 +85,8 @@ MVC-like applications. Services can be nested within other services.
     result = dal.someservice.subservice.somemethod()
 
 
-### Meta
+Meta
+====
 
 Meta is data about the context and usually includes things like the active
 user or HTTP request. Meta is read only and can not be modified inside the
@@ -100,7 +105,8 @@ context.
         assert ctx.dal.test.get_user() == 'bob'
 
 
-### Resource
+Resource
+========
 
 Resources are on-demand access to data backends such as SQL databases, key
 stores, and blob stores. Resources have a setup and teardown phase. Resources
@@ -133,7 +139,8 @@ from a connection pool and checking them back in at the end of the request.
         item = dal.items.get_item(1)
 
 
-### Middleware
+Middleware
+==========
 
 Middleware have a setup and teardown phase for each context. They are
 particularly useful for managing transactions or error handling.
@@ -157,7 +164,8 @@ Context, Context Middleware can gain access to Resources.
     dm.register_context_middleware(transaction_middleware)
 
 
-Principals
+----------
+Principles
 ----------
 
 - Methods that get an object should return `None` if an object can not be found.
@@ -166,10 +174,12 @@ Principals
 - All data access (SQL, MongoDB, Redis, S3, etc) must be done within a Service.
 
 
+--------------
 Considerations
 --------------
 
-### Middleware vs Resource
+Middleware vs Resource
+======================
 
 A Resource is created on demand. It's purpose is to create a needed resource
 for a request and clean it up when done. It is created inside the context (and possibly
