@@ -1,5 +1,15 @@
-from __future__ import absolute_import
-from distutils.core import setup
+from subprocess import check_call
+import sys
+from setuptools import setup
+
+if sys.argv[-1] in ('build', 'publish'):
+    check_call(
+        'rst_include include -s ./_README.rst -t ./README.rst', shell=True)
+    check_call('python setup.py sdist bdist_wheel', shell=True)
+    if sys.argv[-1] == 'publish':
+        check_call('twine upload dist/*', shell=True)
+    sys.exit()
+
 
 def main():
 
@@ -10,18 +20,22 @@ def main():
         version = open('VERSION.txt').read().strip(),
         author='Mike Thornton',
         author_email='six8@devdetails.com',
-        url='https://github.com/six8/polydatum',
+        url='https://github.com/plynth/polydatum',
         # download_url='http://github.com/six8/polydatum',
         keywords=['orm', 'persistence'],
         license='MIT',
         description='An encapsulated persistance layer for Python',
         classifiers = [
             "Programming Language :: Python",
-            "Development Status :: 3 - Alpha",
             "Intended Audience :: Developers",
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
             "Topic :: Software Development :: Libraries :: Python Modules",
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',            
         ],
         long_description=open('README.rst').read(),
         install_requires = [
