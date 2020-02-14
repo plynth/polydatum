@@ -126,7 +126,7 @@ from a connection pool and checking them back in at the end of the request.
 
     class ItemService(Service):
         def get_item(self, id):
-            return self._data_manager.db.query(
+            return self._ctx.db.query(
                 'SELECT * FROM table WHERE id={id}',
                 id=id
             )
