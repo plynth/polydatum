@@ -102,7 +102,7 @@ context.
     dm.register_services(users=UserService())
 
     with dm.context(meta={'user': 'bob'}) as ctx:
-        assert ctx.dal.test.get_user() == 'bob'
+        assert ctx.dal.users.get_user() == 'bob'
 
 
 Resource
