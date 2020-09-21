@@ -40,7 +40,7 @@ def main():
         long_description=open('README.rst').read(),
         long_description_content_type='text/x-rst',
         install_requires = [
-            'six==1.12.0',
+            'six>=1.12.0',
             'werkzeug',
         ],
     )
