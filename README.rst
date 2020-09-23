@@ -12,6 +12,11 @@ A Python encapsulated persistence layer for supporting many data access layers.
 Changelog
 ---------
 
+0.9.1
+=====
+
+* Un-pinned third-party libraries
+
 0.9.0
 =====
 
@@ -102,7 +107,7 @@ context.
     dm.register_services(users=UserService())
 
     with dm.context(meta={'user': 'bob'}) as ctx:
-        assert ctx.dal.users.get_user() == 'bob'
+        assert ctx.dal.test.get_user() == 'bob'
 
 
 Resource
@@ -126,7 +131,7 @@ from a connection pool and checking them back in at the end of the request.
 
     class ItemService(Service):
         def get_item(self, id):
-            return self._ctx.db.query(
+            return self._data_manager.db.query(
                 'SELECT * FROM table WHERE id={id}',
                 id=id
             )

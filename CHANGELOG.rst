@@ -2,6 +2,11 @@
 Changelog
 ---------
 
+0.9.1
+=====
+
+* Un-pinned third-party libraries
+
 0.9.0
 =====
 
