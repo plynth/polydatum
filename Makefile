@@ -32,6 +32,7 @@ $(POLYDATUM_WHEEL): $(shell find src -type f ! -path '*.pyc') setup.py build-req
 
 # Publish to pypi
 publish: $(POLYDATUM_WHEEL)
+	pip install -r build-requirements.txt
 	python setup.py publish
 
 
