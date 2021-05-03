@@ -84,13 +84,14 @@ class DataManager(object):
     """
     Registry for Services, Resources, and other DAL objects.
     """
+    DataAccessLayer = DataAccessLayer
 
     def __init__(self, resource_manager=None):
         if not resource_manager:
             resource_manager = ResourceManager(self)
 
         self._resource_manager = resource_manager
-        self._dal = DataAccessLayer(self)
+        self._dal = self.DataAccessLayer(self)
         self._middleware = []
 
         # TODO Make _ctx_stack only exist on the DataManager
