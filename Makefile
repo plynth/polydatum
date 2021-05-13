@@ -16,7 +16,7 @@ $(shell mkdir -p $(BUILD_DIR))
 VPATH=$(BUILD_DIR) dist
 
 VERSION=$(shell cat VERSION.txt)
-POLYDATUM_WHEEL=polydatum-$(VERSION)-py2.py3-none-any.whl
+POLYDATUM_WHEEL=polydatum-$(VERSION)-py3-none-any.whl
 
 
 .PHONY: all

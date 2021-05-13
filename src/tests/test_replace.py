@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import pytest
 from polydatum import DataManager
 from polydatum import Service
+from polydatum.middleware import dal_resolver
 from polydatum.errors import AlreadyExistsException
 
 
@@ -27,7 +28,7 @@ def test_replace_unique_service():
     data_manager.replace_service('test', new_service)
 
     with data_manager.dal() as dal:
-        assert dal.test is new_service
+        assert dal_resolver(data_manager.require_active_context(), dal.test.path) is new_service
 
 
 def test_register_unique_resource():

@@ -11,7 +11,10 @@ class Service(object):
         return self
 
     def __getattr__(self, name):
-        return self._services[name]
+        try:
+            return self._services[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     def setup(self, data_manager):
         """
@@ -36,4 +39,4 @@ class Service(object):
         :return: DataAccessContext
         :raises: RuntimeError if no context is active
         """
-        return self._data_manager.ctx_stack()._get_current_object()
+        return self._data_manager.require_active_context()

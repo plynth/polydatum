@@ -1,6 +1,12 @@
 ---------
 Changelog
 ---------
+1.0.0
+=====
+
+* Added method middleware
+* Added support for deferred dal method attribute access
+* Dropped support for python 2
 
 0.9.1
 =====

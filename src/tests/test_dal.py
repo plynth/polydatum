@@ -1,4 +1,4 @@
-from polydatum import DataAccessLayer, DataManager as _BaseDataManager
+from polydatum import DataAccessLayer, DataManager as _BaseDataManager, Service
 
 
 def test_custom_dal():
@@ -30,3 +30,21 @@ def test_custom_dal():
     # Verify self._dal is set to the optional DataAccessLayer class i.e. TestDal class
     dm = TestDataManager()
     assert isinstance(dm._dal, TestDal)
+
+
+def test_dal_getitem_access():
+    """
+    Verify `__getitem__` is identical to `__getattr__`
+    """
+
+    expected = "foo"
+
+    class SampleService(Service):
+        def sample_method(self):
+            return expected
+
+    dm = _BaseDataManager()
+    dm.register_services(sample=SampleService())
+
+    with dm.context() as ctx:
+        assert ctx.dal['sample.sample_method']() == expected
