@@ -1,10 +1,17 @@
 from __future__ import absolute_import
+
+import inspect
 from contextlib import contextmanager
-from .context import DataAccessContext
-from polydatum.errors import AlreadyExistsException
+
+from polydatum.middleware import PathSegment, DalCommandRequest, DalCommand, dal_resolver, \
+    dal_method_resolver_middleware, handle_dal_method
+from polydatum.errors import AlreadyExistsException, InvalidMiddleware
 from polydatum.util import is_generator
 from .resources import ResourceManager
 from .context import _ctx_stack
+from typing import Callable, Tuple
+from functools import partial, update_wrapper
+from polydatum.context import DataAccessContext
 
 
 class DataAccessLayer(object):
@@ -12,9 +19,37 @@ class DataAccessLayer(object):
     Gives you access to a DataManager's services.
     """
 
-    def __init__(self, data_manager):
+    # default middleware classes need to be instantiated before being
+    # passed to the init function because the resulting object is called
+    # directly (__call__).
+    def __init__(
+        self,
+        data_manager,
+        middleware=None,
+        default_middleware=(dal_method_resolver_middleware,),
+        handler=handle_dal_method
+    ):
         self._services = {}
         self._data_manager = data_manager
+        self._handler = handler
+        reversed_middleware = []
+
+        middleware = middleware or []
+        if default_middleware:
+            middleware.extend(default_middleware)
+        for m in reversed(middleware):
+            if inspect.isclass(m):
+                m = m()
+            if not isinstance(m, Callable):
+                raise InvalidMiddleware(f'{m} is not a valid Callable middleware')
+            reversed_middleware.append(m)
+
+        # Reverse middleware so that self._handler is the first middleware to call
+        # and at the end of the stack is `self._handler`
+        for m in reversed_middleware:
+            self._handler = update_wrapper(
+                partial(m, handler=self._handler), self._handler
+            )
 
     def register_services(self, **services):
         """
@@ -50,9 +85,16 @@ class DataAccessLayer(object):
         self._services[key] = service
         return service
 
-    def __getattr__(self, name):
-        assert self._data_manager.get_active_context(), 'A DataAccessContext must be started to access the DAL.'
-        return self._services[name]
+    def _call(self, path: Tuple[PathSegment, ...], *args, **kwargs):
+        return self._handler(
+            request=DalCommandRequest(
+                self._data_manager.require_active_context(), path, args, kwargs
+            )
+        )
+
+    def __getattr__(self, name: str) -> DalCommand:
+        assert self._data_manager.get_active_context(), "A DataAccessContext must be started to access the DAL."
+        return DalCommand(self._call, path=(PathSegment(name=name),))
 
     def __getitem__(self, path):
         """
@@ -65,19 +107,10 @@ class DataAccessLayer(object):
 
             dal['myservice.get'](my_id)
         """
-        paths = path.split('.')
-        p = paths.pop(0)
-        if p == 'dal':
-            p = paths.pop(0)
-        loc = self._services[p]
-        while 1:
-            try:
-                p = paths.pop(0)
-            except IndexError:
-                break
-            else:
-                loc = getattr(loc, p)
-        return loc
+        paths = path.split(".")
+        paths = paths[1:] if paths[0] == "dal" else paths
+        path_segments = tuple(PathSegment(name=p) for p in paths)
+        return DalCommand(self._call, path=path_segments)
 
 
 class DataManager(object):
@@ -157,6 +190,15 @@ class DataManager(object):
         """
         if self.ctx_stack.top:
             return self.ctx_stack.top
+
+    def require_active_context(self):
+        """
+        Get the active context, but require it to actually be active.
+
+        :return: DataAccessContext
+        :raises: RuntimeError if no context is active
+        """
+        return self.ctx_stack()._get_current_object()
 
     @contextmanager
     def dal(self, meta=None):

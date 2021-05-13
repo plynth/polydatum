@@ -52,3 +52,10 @@ class ResourceSetupException(ResourceException):
     """
     Resource setup failed
     """
+
+
+class InvalidMiddleware(PolydatumException):
+    """
+    Invalid middleware
+    """
+    pass
