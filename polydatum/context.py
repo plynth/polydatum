@@ -6,7 +6,7 @@ import sys
 import six
 from werkzeug.local import LocalStack
 
-from .errors import MiddlewareSetupException, ResourceSetupException
+from .errors import MiddlewareSetupException, PolydatumException, ResourceSetupException
 
 # Deprecated (0.8.4) in preference of accessing stack on DataManager
 _ctx_stack = LocalStack()
@@ -186,7 +186,8 @@ class DataAccessContext(object):
         exception. To access Resource exit exceptions, use
         ``DataAccessContext.get_resource_exit_errors()``.
         """
-        assert self._state in ("active", "setup"), "Context must be active to exit it"
+        if self._state not in ("active", "setup"):
+            raise PolydatumException("Context must be active to exit it")
         self._state = "exiting"
 
         if exc_type is not None and exc_value is None:

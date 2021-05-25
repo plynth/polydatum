@@ -199,5 +199,6 @@ def handle_dal_method(request: DalCommandRequest):
 
     Returns: Mixed
     """
-    assert request.dal_method, "DAL method not resolved"
+    if not request.dal_method:
+        raise DalMethodError(request.path)
     return request.dal_method(*request.args, **request.kwargs)

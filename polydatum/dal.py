@@ -101,9 +101,6 @@ class DataAccessLayer(object):
         )
 
     def __getattr__(self, name: str) -> DalCommand:
-        assert (
-            self._data_manager.get_active_context()
-        ), "A DataAccessContext must be started to access the DAL."
         return DalCommand(self._call, path=(PathSegment(name=name),))
 
     def __getitem__(self, path):
