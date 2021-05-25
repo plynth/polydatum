@@ -1,12 +1,18 @@
 dist: xenial   # required for Python >= 3.7
 language: python
 python:
-  - "3.6"  
-  - "3.7"  
-  - "nightly"  
-  - "pypy3.5"
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
+# TODO Can't test with pypi because the linters install AST. The linters should only run on Cpython
+#  - "pypy3.6"
+#  - "pypy3.7"
+
+before_install:
+  - pip install poetry
+
 install:
-  - "pip install -r test-requirements.txt ."  
-script:
-  - sh -c 'cd src/tests && py.test'
-    
+  - poetry install --no-interaction
+
+script: poetry run poe lint && poetry run poe test

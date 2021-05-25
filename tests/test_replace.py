@@ -1,9 +1,10 @@
 from __future__ import absolute_import
+
 import pytest
-from polydatum import DataManager
-from polydatum import Service
-from polydatum.middleware import dal_resolver
+
+from polydatum import DataManager, Service
 from polydatum.errors import AlreadyExistsException
+from polydatum.middleware import dal_resolver
 
 
 def test_register_unique_service():
@@ -25,16 +26,20 @@ def test_replace_unique_service():
     data_manager.register_services(test=Service())
 
     new_service = Service()
-    data_manager.replace_service('test', new_service)
+    data_manager.replace_service("test", new_service)
 
     with data_manager.dal() as dal:
-        assert dal_resolver(data_manager.require_active_context(), dal.test.path) is new_service
+        assert (
+            dal_resolver(data_manager.require_active_context(), dal.test.path)
+            is new_service
+        )
 
 
 def test_register_unique_resource():
     """
     Verify you can not register an existing resource
     """
+
     def resource(context):
         yield
 
@@ -51,15 +56,15 @@ def test_replace_unique_resource():
     """
 
     def resource_a(context):
-        yield 'a'
+        yield "a"
 
     def resource_b(context):
-        yield 'b'
+        yield "b"
 
     data_manager = DataManager()
     data_manager.register_resources(test=resource_a)
 
-    data_manager.replace_resource('test', resource_b)
+    data_manager.replace_resource("test", resource_b)
 
     with data_manager.context() as ctx:
-        assert ctx.test == 'b'
+        assert ctx.test == "b"

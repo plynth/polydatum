@@ -1,31 +1,34 @@
 Development
 ===========
 
-Use `make.sh` to run `make` commands in a Docker container::
-
-    ./make.sh
-
-Building
---------
-
-To build::
-
-    ./make.sh
-
-The modified files should be committed.
-
-
-Publish
--------
-
-Publish to pypi::
-
-    ./make.sh publish
-
-
 Running Tests
 -------------
 
 To run tests::
 
-    ./make.sh test
+    make test
+
+
+To run tests with pytest directly::
+
+    make test.shell
+    py.test --pdb
+
+
+Formatting & Linting
+--------------------
+
+    make lint
+    make format
+
+
+Poetry
+------
+
+Dependencies are managed with [poetry](https://python-poetry.org/). To get a shell for using poetry::
+
+    make poetry.shell
+
+Publish::
+
+    poetry publish

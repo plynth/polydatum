@@ -6,42 +6,48 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 # END Disable in-built Makefile rules
 
-BUILD_DIR := build
+IMAGE_REPO=plynth/polydatum
+IMAGE_NAME=$(IMAGE_REPO):latest
 
-# Make sure build dir exists
-$(shell mkdir -p $(BUILD_DIR))
+define poe
+	# Run a poe command
+	docker run --rm -it \
+		-v "$$PWD:$$PWD" \
+		-w "$$PWD" \
+		"$(IMAGE_NAME)-$(1)" \
+		poe $(2)
+endef
 
-# Look in build dir for goal files like "wheels" and Docker image
-# timestamp files
-VPATH=$(BUILD_DIR) dist
+%.docker-target:
+	docker build -t "$(IMAGE_NAME)-$(basename $(@))" --target $(basename $(@)) .
 
-VERSION=$(shell cat VERSION.txt)
-POLYDATUM_WHEEL=polydatum-$(VERSION)-py3-none-any.whl
+%.shell: %.docker-target
+	docker run -it --rm \
+		-v "$$PWD:$$PWD" \
+		-w "$$PWD" \
+		--entrypoint /bin/bash \
+		"$(IMAGE_NAME)-$(basename $(@))"
 
+.PHONY: format
+format: dependencies.docker-target readme
+	$(call poe,dependencies,format)
 
-.PHONY: all
-all: wheel
-
-
-.PHONY: wheel
-wheel: $(POLYDATUM_WHEEL)
-$(POLYDATUM_WHEEL): $(shell find src -type f ! -path '*.pyc') setup.py build-requirements.txt
-	pip install -r build-requirements.txt
-	python setup.py build
-
-
-# Publish to pypi
-publish: $(POLYDATUM_WHEEL)
-	pip install -r build-requirements.txt
-	python setup.py publish
-
+.PHONY: lint
+lint: dependencies.docker-target
+	$(call poe,dependencies,lint)
 
 .PHONY: test
-test: $(POLYDATUM_WHEEL)
-	pip install -r test-requirements.txt ./dist/$(POLYDATUM_WHEEL)
-	cd src/tests && py.test -v
+test: venv.docker-target
+	$(call poe,venv,test)
 
+test.shell:
+	docker run -it --rm \
+		-v "$$PWD:$$PWD" \
+		-w "$$PWD" \
+		-v "$$PWD/polydatum:$$(docker run --rm --entrypoint "python" "$(IMAGE_NAME)-venv" -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")/polydatum:ro" \
+		--entrypoint /bin/bash \
+		"$(IMAGE_NAME)-venv"
 
-.PHONY: clean
-clean:
-	rm -Rf dist build
+.PHONY: readme
+readme: dependencies.docker-target
+	$(call poe,dependencies,readme)

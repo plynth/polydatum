@@ -1,6 +1,4 @@
-import pytest
-
-from polydatum.middleware import PathSegment, DalCommand
+from polydatum.middleware import DalCommand, PathSegment
 
 
 def test_deferred_attribute_access(path_segment_factory):
@@ -47,15 +45,18 @@ def test_dal_deferred_attr_access_handler_called(path_segment_factory):
     Verify that the handler for a DalCommand gets called when the
     DalCommand is called.
     """
+
     def handler(path_chain, *args, **kwargs):
         return path_chain, args, kwargs
 
     test_path_segment = path_segment_factory()
     dc = DalCommand(handler, test_path_segment)
-    test_args = ('foo', 'bar')
-    test_kwargs = dict(example='test', other='monkey')
+    test_args = ("foo", "bar")
+    test_kwargs = dict(example="test", other="monkey")
     for requester in [dc, dc.foo.bar, dc.monkey.gorilla.orangutan]:
-        called_path_segment, called_args, called_kwargs = requester(*test_args, **test_kwargs)
+        called_path_segment, called_args, called_kwargs = requester(
+            *test_args, **test_kwargs
+        )
         assert isinstance(called_path_segment[0], PathSegment)
         assert called_path_segment[0].name == test_path_segment[0].name
         assert called_args == test_args
@@ -74,15 +75,15 @@ def test_dal_deferred_attr_access_path_chaining(path_segment_factory):
         assert deep_dc.path = (PathSegment(name=foo), PathSegment(name=bar), ...)
         assert deep_dc.non_existent.path == (deep_dc.path + PathSegment(name=non_existent))
     """
-    dc = DalCommand(lambda: None, path_segment_factory('animals'))
+    dc = DalCommand(lambda: None, path_segment_factory("animals"))
     nested_dc = dc.foo.bar.baz.monkey.gorilla
     expected_path_chain = (
-        PathSegment(name='animals'),
-        PathSegment(name='foo'),
-        PathSegment(name='bar'),
-        PathSegment(name='baz'),
-        PathSegment(name='monkey'),
-        PathSegment(name='gorilla')
+        PathSegment(name="animals"),
+        PathSegment(name="foo"),
+        PathSegment(name="bar"),
+        PathSegment(name="baz"),
+        PathSegment(name="monkey"),
+        PathSegment(name="gorilla"),
     )
     assert nested_dc.path == expected_path_chain
 
@@ -91,7 +92,7 @@ def test_dal_deferred_attr_access_reusability(path_segment_factory):
     """
     Verify the same dal attributes can be re-used
     """
-    req = DalCommand(lambda:None, path_segment_factory('req'))
+    req = DalCommand(lambda: None, path_segment_factory("req"))
     bar = req.foo.bar
     bar2 = req.foo.bar
 
@@ -103,4 +104,3 @@ def test_dal_deferred_attr_access_reusability(path_segment_factory):
 
     assert zap != zap2
     assert zap.path == zap2.path
-

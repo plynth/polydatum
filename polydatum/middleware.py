@@ -1,7 +1,7 @@
-from typing import Tuple, Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional, Tuple
 
-from polydatum.services import Service
 from polydatum.context import DataAccessContext
+from polydatum.services import Service
 
 
 class PathSegment:
@@ -20,6 +20,7 @@ class PathSegment:
 
         PathSegment(name="my_service"), PathSegment(name="sub_service"), etc.
     """
+
     name = None
 
     # A collection of meta properties.
@@ -34,9 +35,11 @@ class PathSegment:
         self.meta = meta
 
     def __eq__(self, other):
-        return isinstance(other, PathSegment) \
-               and self.name == other.name \
-               and self.meta == other.meta
+        return (
+            isinstance(other, PathSegment)
+            and self.name == other.name
+            and self.meta == other.meta
+        )
 
 
 class DalCommandRequest:
@@ -45,7 +48,11 @@ class DalCommandRequest:
     """
 
     def __init__(
-            self, ctx: DataAccessContext, path: Tuple[PathSegment, ...], args: Tuple[Any, ...], kwargs: Dict
+        self,
+        ctx: DataAccessContext,
+        path: Tuple[PathSegment, ...],
+        args: Tuple[Any, ...],
+        kwargs: Dict,
     ):
         self.ctx = ctx
         self.path = path
@@ -60,6 +67,7 @@ class DalMethodError(Exception):
     when a service/method cannot be resolved by the
     DalMethodResolverMiddleware
     """
+
     def __init__(self, path: Optional[Tuple[PathSegment]] = None):
         self.path = path
         super().__init__(f'Invalid dal method: {".".join([p.name for p in self.path])}')
@@ -105,7 +113,7 @@ class DalCommand:
         self._handler = handler
         self.path = path
 
-    def __getattr__(self, name: str) -> 'DalCommand':
+    def __getattr__(self, name: str) -> "DalCommand":
         return self.__class__(self._handler, self.path + (self.PathSegment(name=name),))
 
     def __call__(self, *args, **kwargs):
@@ -122,7 +130,9 @@ def dal_resolver(ctx, request_path):
     """
     service_or_method = None
     for (path, service_or_method) in resolve(ctx, request_path):
-        if not (service_or_method and isinstance(service_or_method, (Callable, Service))):
+        if not (
+            service_or_method and isinstance(service_or_method, (Callable, Service))
+        ):
             raise DalMethodError(path=path)
     if not service_or_method:
         raise DalMethodError(request_path)
@@ -189,5 +199,6 @@ def handle_dal_method(request: DalCommandRequest):
 
     Returns: Mixed
     """
-    assert request.dal_method, "DAL method not resolved"
+    if not request.dal_method:
+        raise DalMethodError(request.path)
     return request.dal_method(*request.args, **request.kwargs)
