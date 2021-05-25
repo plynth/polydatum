@@ -18,7 +18,6 @@ Changelog
 * Added support for deferred dal method attribute access
 * Dropped support for python 2
 
-
 0.9.1
 =====
 

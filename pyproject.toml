@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "polydatum"
+version = "1.0.0"
+description = "An encapsulated logic layer for Python"
+authors = ["Mike Thornton <six8@devdetails.com>"]
+license = "MIT"
+readme = "README.rst"
+homepage = "https://github.com/plynth/polydatum"
+repository = "https://github.com/plynth/polydatum"
+
+classifiers = [
+    "Programming Language :: Python",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6.2,<4.0"
+Werkzeug = ">=0.10.4,<3.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+black = "^21.5b1"
+isort = "^5.8.0"
+autoflake = "^1.4"
+bandit = "^1.7.0"
+rst-include = "^2.1.1"
+poethepoet = "^0.10.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+atomic = true
+known_first_party = [
+    "polydatum",
+]
+src_paths = [
+    "polydatum",
+    "tests",
+]
+
+[tool.pylint.messages_control]
+disable = "C0330, C0326"
+
+[tool.pylint.format]
+max-line-length = "88"
+
+[tool.poe.tasks]
+format = {shell = "autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports . && isort . && black"}
+lint.shell = """
+status=0
+echo '== autoflake =='
+autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports --check . || status=1
+echo '== isort =='
+isort --check . || status=1
+echo '== black =='
+black --check . || status=1
+echo '== bandit =='
+bandit --exclude '*/tests/*' --recursive --verbose . || status=1
+exit $status
+"""
+# Generate readme
+readme = "rst_include include ./_README.rst ./README.rst"
+test = "py.test -vvv tests"
