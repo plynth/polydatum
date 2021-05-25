@@ -74,7 +74,7 @@ isort --check . || status=1
 echo '== black =='
 black --check . || status=1
 echo '== bandit =='
-bandit --exclude '*/tests/*' --recursive --verbose . || status=1
+bandit --exclude '*/tests/*' --recursive . || status=1
 exit $status
 """
 # Generate readme

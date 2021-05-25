@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import inspect
 from contextlib import contextmanager
 from functools import partial, update_wrapper
