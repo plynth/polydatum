@@ -60,7 +60,7 @@ disable = "C0330, C0326"
 max-line-length = "88"
 
 [tool.poe.tasks]
-format = {shell = "autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports . && isort . && black"}
+format = {shell = "autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports . && isort . && black ."}
 lint.shell = """
 status=0
 echo '== autoflake =='

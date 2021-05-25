@@ -2,16 +2,22 @@ from __future__ import absolute_import
 
 import inspect
 from contextlib import contextmanager
-
-from polydatum.middleware import PathSegment, DalCommandRequest, DalCommand, dal_resolver, \
-    dal_method_resolver_middleware, handle_dal_method
-from polydatum.errors import AlreadyExistsException, InvalidMiddleware
-from polydatum.util import is_generator
-from .resources import ResourceManager
-from .context import _ctx_stack
-from typing import Callable, Tuple
 from functools import partial, update_wrapper
+from typing import Callable, Tuple
+
 from polydatum.context import DataAccessContext
+from polydatum.errors import AlreadyExistsException, InvalidMiddleware
+from polydatum.middleware import (
+    DalCommand,
+    DalCommandRequest,
+    PathSegment,
+    dal_method_resolver_middleware,
+    handle_dal_method,
+)
+from polydatum.util import is_generator
+
+from .context import _ctx_stack
+from .resources import ResourceManager
 
 
 class DataAccessLayer(object):
@@ -27,7 +33,7 @@ class DataAccessLayer(object):
         data_manager,
         middleware=None,
         default_middleware=(dal_method_resolver_middleware,),
-        handler=handle_dal_method
+        handler=handle_dal_method,
     ):
         self._services = {}
         self._data_manager = data_manager
@@ -41,7 +47,7 @@ class DataAccessLayer(object):
             if inspect.isclass(m):
                 m = m()
             if not isinstance(m, Callable):
-                raise InvalidMiddleware(f'{m} is not a valid Callable middleware')
+                raise InvalidMiddleware(f"{m} is not a valid Callable middleware")
             reversed_middleware.append(m)
 
         # Reverse middleware so that self._handler is the first middleware to call
@@ -61,7 +67,9 @@ class DataAccessLayer(object):
         """
         for key, service in services.items():
             if key in self._services:
-                raise AlreadyExistsException('A Service for {} is already registered.'.format(key))
+                raise AlreadyExistsException(
+                    "A Service for {} is already registered.".format(key)
+                )
 
             self._init_service(key, service)
         return self
@@ -93,7 +101,9 @@ class DataAccessLayer(object):
         )
 
     def __getattr__(self, name: str) -> DalCommand:
-        assert self._data_manager.get_active_context(), "A DataAccessContext must be started to access the DAL."
+        assert (
+            self._data_manager.get_active_context()
+        ), "A DataAccessContext must be started to access the DAL."
         return DalCommand(self._call, path=(PathSegment(name=name),))
 
     def __getitem__(self, path):
@@ -117,6 +127,7 @@ class DataManager(object):
     """
     Registry for Services, Resources, and other DAL objects.
     """
+
     DataAccessLayer = DataAccessLayer
 
     def __init__(self, resource_manager=None):
@@ -136,7 +147,9 @@ class DataManager(object):
         """
         for m in middleware:
             if not is_generator(m):
-                raise Exception('Middleware {} must be a Python generator callable.'.format(m))
+                raise Exception(
+                    "Middleware {} must be a Python generator callable.".format(m)
+                )
 
         self._middleware.extend(middleware)
 

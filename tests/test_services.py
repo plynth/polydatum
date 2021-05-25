@@ -1,7 +1,9 @@
 from __future__ import absolute_import
+
+from uuid import uuid4
+
 from polydatum import DataManager, Service
 from polydatum.resources import Resource
-from uuid import uuid4
 
 
 class MockStoreConnection(object):
@@ -18,10 +20,10 @@ class MockStoreConnection(object):
         return False
 
     def save(self, record):
-        if not record.get('id', None):
-            record['id'] = str(uuid4())
+        if not record.get("id", None):
+            record["id"] = str(uuid4())
 
-        self._store._data[record['id']] = record
+        self._store._data[record["id"]] = record
         return record
 
     def close(self):
@@ -69,7 +71,7 @@ class UserService(Service):
         return self._store.get(id)
 
     def update(self, id, user):
-        user['id'] = id
+        user["id"] = id
         self._store.save(user)
         return user
 
@@ -91,7 +93,7 @@ class UserProfileService(Service):
         return self._store.get(user_id)
 
     def update(self, user_id, profile):
-        profile['id'] = user_id
+        profile["id"] = user_id
         self._store.save(profile)
         return profile
 
@@ -102,9 +104,7 @@ class UserProfileService(Service):
 def get_dam():
     data_manager = DataManager()
     data_manager.register_services(
-        users=UserService().register_services(
-            profile=UserProfileService()
-        )
+        users=UserService().register_services(profile=UserProfileService())
     )
     data_manager.register_resources(
         user_db=MockStoreResource(MockStore()),
@@ -119,18 +119,16 @@ def test_service():
     """
     data_manager = get_dam()
     with data_manager.dal() as dal:
-        user = {
-            'name': str(uuid4())
-        }
+        user = {"name": str(uuid4())}
 
         saved_user = dal.users.create(user)
-        assert saved_user['id']
-        assert saved_user['name'] == user['name']
+        assert saved_user["id"]
+        assert saved_user["name"] == user["name"]
 
-        got_user = dal.users.get(saved_user['id'])
-        assert got_user['id'] == saved_user['id']
+        got_user = dal.users.get(saved_user["id"])
+        assert got_user["id"] == saved_user["id"]
 
-        deleted = dal.users.delete(saved_user['id'])
+        deleted = dal.users.delete(saved_user["id"])
         assert deleted
 
 
@@ -140,22 +138,20 @@ def test_sub_service():
     """
     data_manager = get_dam()
     with data_manager.dal() as dal:
-        user = {
-            'name': str(uuid4())
-        }
+        user = {"name": str(uuid4())}
 
         user = dal.users.create(user)
-        profile = dal.users.profile.get(user['id'])
+        profile = dal.users.profile.get(user["id"])
         assert not profile
 
         uuid = str(uuid4())
-        profile = dal.users.profile.update(user['id'], dict(uuid=uuid))
+        profile = dal.users.profile.update(user["id"], dict(uuid=uuid))
         assert profile
-        assert profile['id'] == user['id']
-        assert profile['uuid'] == uuid
+        assert profile["id"] == user["id"]
+        assert profile["uuid"] == uuid
 
-        deleted = dal.users.delete(user['id'])
+        deleted = dal.users.delete(user["id"])
         assert deleted
 
-        profile = dal.users.profile.get(user['id'])
+        profile = dal.users.profile.get(user["id"])
         assert not profile

@@ -1,2 +1,2 @@
-from .dal import DataManager, DataAccessLayer
+from .dal import DataAccessLayer, DataManager
 from .services import Service

@@ -18,10 +18,10 @@ def test_path_segment():
     with pytest.raises(TypeError):
         PathSegment()
 
-    name = 'example'
+    name = "example"
     p = PathSegment(name)
     assert p.name == name
     assert p.meta == dict()
 
-    p = PathSegment(name, example='foo')
-    assert p.meta['example'] == 'foo'
+    p = PathSegment(name, example="foo")
+    assert p.meta["example"] == "foo"

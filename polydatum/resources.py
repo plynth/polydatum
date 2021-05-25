@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 from polydatum.errors import AlreadyExistsException
 from polydatum.util import is_generator
 
@@ -48,6 +49,7 @@ class ResourceManager(object):
     Manages resources for a DAL. Resources can be things such
     as database connections, caches, etc.
     """
+
     def __init__(self, data_manager):
         self._resources = {}
         self._data_manager = data_manager
@@ -58,7 +60,9 @@ class ResourceManager(object):
         """
         for key, resource in resources.items():
             if key in self._resources:
-                raise AlreadyExistsException('A Service for {} is already registered.'.format(key))
+                raise AlreadyExistsException(
+                    "A Service for {} is already registered.".format(key)
+                )
 
             self._init_resource(key, resource)
 
@@ -78,9 +82,13 @@ class ResourceManager(object):
 
     def _init_resource(self, key, resource):
         if not is_generator(resource):
-            raise Exception('Resource {}:{} must be a Python generator callable.'.format(key, resource))
+            raise Exception(
+                "Resource {}:{} must be a Python generator callable.".format(
+                    key, resource
+                )
+            )
 
-        if hasattr(resource, 'setup') and callable(resource.setup):
+        if hasattr(resource, "setup") and callable(resource.setup):
             # Setup is deprecated as of 0.8.4
             resource.setup(self._data_manager)
 

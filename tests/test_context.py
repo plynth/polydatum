@@ -1,13 +1,16 @@
 from __future__ import absolute_import
-from polydatum.context import DataAccessContext
-from polydatum import DataManager, Service
+
 import pytest
+
+from polydatum import DataManager, Service
+from polydatum.context import DataAccessContext
 
 
 def test_meta():
     """
     Verify that meta can be given and retrieved from a context
     """
+
     class TestService(Service):
         def get_user(self):
             return self._ctx.meta.user
@@ -17,13 +20,13 @@ def test_meta():
     dm = DataManager()
     dm.register_services(test=TestService())
 
-    with dm.context(meta={'user': user}) as ctx:
+    with dm.context(meta={"user": user}) as ctx:
         assert ctx.dal.test.get_user() is user
 
     # Verify meta can not change
-    with dm.context(meta={'user': user}) as ctx:
+    with dm.context(meta={"user": user}) as ctx:
         with pytest.raises(AttributeError):
-            ctx.meta.user = 'foo'
+            ctx.meta.user = "foo"
         assert ctx.dal.test.get_user() is user
 
 
@@ -46,10 +49,10 @@ def test_service_context():
     Verify that if you access a Service's context when no
     context is active, you get a RuntimeError.
     """
+
     class TestService(Service):
         def get_context(self):
             return self._ctx
-
 
     data_manager = DataManager()
     data_manager.register_services(test=TestService())

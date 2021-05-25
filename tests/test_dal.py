@@ -1,4 +1,6 @@
-from polydatum import DataAccessLayer, DataManager as _BaseDataManager, Service
+from polydatum import DataAccessLayer
+from polydatum import DataManager as _BaseDataManager
+from polydatum import Service
 
 
 def test_custom_dal():
@@ -10,6 +12,7 @@ def test_custom_dal():
         """
         Test dal class
         """
+
         def __init__(self, data_manager):
             self._services = {}
             self._data_manager = data_manager
@@ -18,6 +21,7 @@ def test_custom_dal():
         """
         DataManager wrapper for test
         """
+
         DataAccessLayer = TestDal
 
         def __init__(self, resource_manager=None):
@@ -47,4 +51,4 @@ def test_dal_getitem_access():
     dm.register_services(sample=SampleService())
 
     with dm.context() as ctx:
-        assert ctx.dal['sample.sample_method']() == expected
+        assert ctx.dal["sample.sample_method"]() == expected

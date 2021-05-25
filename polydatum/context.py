@@ -1,9 +1,12 @@
 from __future__ import absolute_import
+
 import json
-from werkzeug.local import LocalStack
 import sys
-from .errors import MiddlewareSetupException, ResourceSetupException
+
 import six
+from werkzeug.local import LocalStack
+
+from .errors import MiddlewareSetupException, ResourceSetupException
 
 # Deprecated (0.8.4) in preference of accessing stack on DataManager
 _ctx_stack = LocalStack()
@@ -34,16 +37,17 @@ class Meta(object):
     Read only meta data. Keys are accessible as attributes.
     Keys can not be changed once initialized.
     """
+
     _values = None
 
     def __init__(self, opts=None):
-        object.__setattr__(self, '_values', {})
+        object.__setattr__(self, "_values", {})
         if opts:
             for k, v in opts.items():
                 self._values[k] = v
 
     def __setattr__(self, key, value):
-        raise AttributeError('Meta values can not be changed.')
+        raise AttributeError("Meta values can not be changed.")
 
     def __getattr__(self, key):
         """
@@ -72,7 +76,7 @@ class Meta(object):
         return json.dumps(dict(list(self.items())), indent=2)
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self)
+        return "<{} {}>".format(self.__class__.__name__, self)
 
 
 class DataAccessContext(object):
@@ -86,6 +90,7 @@ class DataAccessContext(object):
     - Tear down created Resources in random order
     - Remove from context stack
     """
+
     def __init__(self, data_manager, meta=None):
         """
         :param data_manager: DataManager for the context
@@ -98,7 +103,7 @@ class DataAccessContext(object):
         self._resource_generators = {}
         self._middleware_generators = None
         self._resource_exit_errors = []
-        self._state = 'created'
+        self._state = "created"
 
     def get_resource_exit_errors(self):
         """
@@ -125,9 +130,7 @@ class DataAccessContext(object):
         # Create each middleware generator
         # This just calls each middleware and passes it the current context.
         # The middleware should then yield once.
-        self._middleware_generators = [
-            (m, m(self)) for m in middleware
-        ]
+        self._middleware_generators = [(m, m(self)) for m in middleware]
 
         for middleware, generator in self._middleware_generators:
             try:
@@ -135,16 +138,18 @@ class DataAccessContext(object):
             except StopIteration:
                 # Middleware didn't want to setup, but did not
                 # raise an exception. Why not?
-                raise MiddlewareSetupException('Middleware %s did not yield on setup.' % middleware)
+                raise MiddlewareSetupException(
+                    "Middleware %s did not yield on setup." % middleware
+                )
 
     def __enter__(self):
         """
         Open the context and put it on the stack
         """
-        if self._state != 'created':
-            raise RuntimeError('Context may only be used once')
+        if self._state != "created":
+            raise RuntimeError("Context may only be used once")
 
-        self._state = 'setup'
+        self._state = "setup"
         try:
             self._setup()
         except:
@@ -156,7 +161,7 @@ class DataAccessContext(object):
             else:
                 raise
 
-        self._state = 'active'
+        self._state = "active"
 
         return self
 
@@ -181,8 +186,8 @@ class DataAccessContext(object):
         exception. To access Resource exit exceptions, use
         ``DataAccessContext.get_resource_exit_errors()``.
         """
-        assert self._state in ('active', 'setup'), 'Context must be active to exit it'
-        self._state = 'exiting'
+        assert self._state in ("active", "setup"), "Context must be active to exit it"
+        self._state = "exiting"
 
         if exc_type is not None and exc_value is None:
             # Need to force instantiation so we can reliably
@@ -236,7 +241,7 @@ class DataAccessContext(object):
                     self._final_hook(exc_value)
                 finally:
                     self.data_manager.ctx_stack.pop()
-                    self._state = 'exited'
+                    self._state = "exited"
 
     def _exit(self, obj, type, value, traceback):
         """
@@ -250,12 +255,12 @@ class DataAccessContext(object):
                 # Resource closed as expected
                 return
             else:
-                raise RuntimeError('{} yielded more than once.'.format(obj))
+                raise RuntimeError("{} yielded more than once.".format(obj))
         else:
             # In-context exception occurred
             try:
                 obj.throw(type, value, traceback)
-                raise RuntimeError('{} did not close after throw()'.format(obj))
+                raise RuntimeError("{} did not close after throw()".format(obj))
             except StopIteration as exc:
                 # Suppress the exception *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
@@ -281,12 +286,14 @@ class DataAccessContext(object):
         Gets a Resource from the DataManager and initializes
         it for the request.
         """
-        if self._state not in ('active', 'setup', 'exiting'):
-            raise RuntimeError('Resources can only be used during an active context')
+        if self._state not in ("active", "setup", "exiting"):
+            raise RuntimeError("Resources can only be used during an active context")
 
         if name not in self._resources:
-            if self._state not in ('active', 'setup'):
-                raise RuntimeError('Resources can only be created during an active context')
+            if self._state not in ("active", "setup"):
+                raise RuntimeError(
+                    "Resources can only be created during an active context"
+                )
 
             resource = self.data_manager.get_resource(name)
             if resource:
@@ -299,7 +306,9 @@ class DataAccessContext(object):
                 except StopIteration:
                     # Resource didn't want to setup, but did not
                     # raise an exception. Why not?
-                    raise ResourceSetupException('Resource {} did not yield on setup.'.format(resource))
+                    raise ResourceSetupException(
+                        "Resource {} did not yield on setup.".format(resource)
+                    )
             else:
                 raise AttributeError('No resource named "{}" for context.'.format(name))
 
@@ -319,16 +328,13 @@ class DataAccessContext(object):
         :param exception: An exception if there was an uncaught one during the
             context lifetime.
         """
-        pass
 
     def _setup_hook(self):
         """
         Handle any thing that needs to happen before start of the context.
         """
-        pass
 
     def _final_hook(self, exception):
         """
         Handle any thing that needs to happen at the end of the context.
         """
-        pass
