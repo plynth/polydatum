@@ -201,16 +201,3 @@ torndown before resources are torndown. It's purpose is to do setup/teardown wit
 the context. Errors that occur in-context are propagated to middleware. Errors that
 occur in middleware are also propagated.
 
-
-Testing
--------
-
-To run tests you'll need to install the test requirements:
-
-    pip install -e .
-    pip install -r src/tests/requirements.txt
-
-Run tests:
-
-    cd src/tests && py.test
-

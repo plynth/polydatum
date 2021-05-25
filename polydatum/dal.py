@@ -208,7 +208,10 @@ class DataManager(object):
         :return: DataAccessContext
         :raises: RuntimeError if no context is active
         """
-        return self.ctx_stack()._get_current_object()
+        context = self.get_active_context()
+        if not context:
+            raise RuntimeError("No active context")
+        return context
 
     @contextmanager
     def dal(self, meta=None):

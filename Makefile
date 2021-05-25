@@ -9,6 +9,15 @@ MAKEFLAGS += --no-builtin-rules
 IMAGE_REPO=plynth/polydatum
 IMAGE_NAME=$(IMAGE_REPO):latest
 
+define poe
+	# Run a poe command
+	docker run --rm -it \
+		-v "$$PWD:$$PWD" \
+		-w "$$PWD" \
+		"$(IMAGE_NAME)-$(1)" \
+		poe $(2)
+endef
+
 %.docker-target:
 	docker build -t "$(IMAGE_NAME)-$(basename $(@))" --target $(basename $(@)) .
 
@@ -19,42 +28,26 @@ IMAGE_NAME=$(IMAGE_REPO):latest
 		--entrypoint /bin/bash \
 		"$(IMAGE_NAME)-$(basename $(@))"
 
-
 .PHONY: format
-format: dependencies.docker-target
-	docker run --rm -it \
-		-v "$$PWD:$$PWD" \
-		-w "$$PWD" \
-		"$(IMAGE_NAME)-dependencies" \
-		poe format
+format: dependencies.docker-target readme
+	$(call poe,dependencies,format)
 
 .PHONY: lint
 lint: dependencies.docker-target
-	docker run --rm -it \
-		-v "$$PWD:$$PWD" \
-		-w "$$PWD" \
-		"$(IMAGE_NAME)-dependencies" \
-		poe lint
+	$(call poe,dependencies,lint)
 
 .PHONY: test
-test: dependencies.docker-target
-	docker run --rm -it \
+test: venv.docker-target
+	$(call poe,venv,test)
+
+test.shell:
+	docker run -it --rm \
 		-v "$$PWD:$$PWD" \
 		-w "$$PWD" \
-		"$(IMAGE_NAME)-dependencies" \
-		poe test
+		-v "$$PWD/polydatum:$$(docker run --rm --entrypoint "python" "$(IMAGE_NAME)-venv" -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")/polydatum:ro" \
+		--entrypoint /bin/bash \
+		"$(IMAGE_NAME)-venv"
 
 .PHONY: readme
 readme: dependencies.docker-target
-	docker run --rm -it \
-		-v "$$PWD:$$PWD" \
-		-w "$$PWD" \
-		"$(IMAGE_NAME)-dependencies" \
-		rst_include include ./_README.rst ./README.rst
-
-# Publish to pypi
-publish: poetry.docker-target
-
-.PHONY: clean
-clean:
-	rm -Rf dist build
+	$(call poe,dependencies,readme)

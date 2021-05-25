@@ -191,8 +191,9 @@ def test_dal_attribute_access_returns_dal_method_requester():
 
     # also make sure to verify the error case where a context
     # has not been started yet.
-    with pytest.raises(DalMethodError):
-        dal.foo.bar.fake
+    fake_method = dal.foo.bar.fake  # No error expected when only referencing
+    with pytest.raises(RuntimeError):
+        fake_method()
 
 
 def test_default_dal_handler(path_segment_factory):

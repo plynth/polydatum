@@ -65,3 +65,16 @@ def test_service_context():
 
     with pytest.raises(RuntimeError):
         get_context()
+
+
+def test_require_active_context():
+    """
+    Verify require_active_context raises an exception when there is no context
+    or returns the context when there is one.
+    """
+    data_manager = DataManager()
+    with pytest.raises(RuntimeError):
+        data_manager.require_active_context()
+
+    with data_manager.context() as ctx:
+        assert data_manager.require_active_context() is ctx

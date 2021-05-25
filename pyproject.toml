@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
 ]
+include = ["LICENSE"]
 
 [tool.poetry.dependencies]
 python = ">=3.6.2,<4.0"
@@ -58,6 +59,9 @@ disable = "C0330, C0326"
 
 [tool.pylint.format]
 max-line-length = "88"
+
+[tool.poe.executor]
+type = "simple"
 
 [tool.poe.tasks]
 format = {shell = "autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports . && isort . && black ."}

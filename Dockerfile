@@ -21,7 +21,3 @@ RUN "$VIRTUAL_ENV/bin/pip" install --no-index /src/dist/*.whl
 FROM base AS venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 COPY --from="wheel" "$VIRTUAL_ENV" "$VIRTUAL_ENV/"
-
-FROM venv AS test
-
-RUN cd src/tests && py.test -v
