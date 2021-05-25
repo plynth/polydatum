@@ -191,7 +191,7 @@ def test_dal_attribute_access_returns_dal_method_requester():
 
     # also make sure to verify the error case where a context
     # has not been started yet.
-    with pytest.raises(AssertionError):
+    with pytest.raises(DalMethodError):
         dal.foo.bar.fake
 
 
