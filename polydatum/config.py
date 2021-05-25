@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+
 import importlib
 import json
+
 import six
 
 
@@ -9,13 +11,14 @@ class Config(object):
     Simple configuration object. Keys are accessible as attributes.
     Keys can not be changed once initialized.
     """
+
     def __init__(self, opts=None):
         if opts:
             for k, v in six.iteritems(opts):
                 object.__setattr__(self, k, v)
 
     def __setattr__(self, key, value):
-        raise KeyError('Config keys can not be changed.')
+        raise KeyError("Config keys can not be changed.")
 
     def get(self, key, default=None):
         return getattr(self, key, default)
@@ -38,7 +41,7 @@ class Config(object):
         return json.dumps(dict(list(self.items())), indent=2)
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self)
+        return "<{} {}>".format(self.__class__.__name__, self)
 
 
 def from_module(module_name):

@@ -1,12 +1,15 @@
-from typing import Callable
-
 import pytest
 
 from polydatum import DataAccessLayer, Service
 from polydatum.dal import DataManager
-from polydatum.middleware import DalCommandRequest, DalCommand, dal_method_resolver_middleware, \
-    handle_dal_method, dal_resolver, DalMethodError
 from polydatum.errors import InvalidMiddleware
+from polydatum.middleware import (
+    DalCommand,
+    DalCommandRequest,
+    DalMethodError,
+    dal_resolver,
+    handle_dal_method,
+)
 
 
 class FooMiddleware:
@@ -15,21 +18,26 @@ class FooMiddleware:
     pass
 
 
-@pytest.mark.parametrize('middleware', [
-    (FooMiddleware, ),
-    (FooMiddleware(), ),
-    (True, ),
-    ('random-string',),
-    ([],),
-    (None,),
-])
+@pytest.mark.parametrize(
+    "middleware",
+    [
+        (FooMiddleware,),
+        (FooMiddleware(),),
+        (True,),
+        ("random-string",),
+        ([],),
+        (None,),
+    ],
+)
 def test_dal_middleware_requires_callable(middleware):
     """
     Verify that you can specify method middleware as either an instance
     or a class (as a convenience).
     """
     with pytest.raises(InvalidMiddleware):
-        DataAccessLayer(data_manager=None, middleware=[middleware], default_middleware=None)
+        DataAccessLayer(
+            data_manager=None, middleware=[middleware], default_middleware=None
+        )
 
 
 def test_dal_method_middleware():
@@ -43,51 +51,55 @@ def test_dal_method_middleware():
     because we are testing middleware call chains, not functionality
     of that class.
     """
+
     def test_method():
-        return ['default-handler-call']
+        return ["default-handler-call"]
 
     class OuterMiddleware:
         def __call__(self, request, handler):
-            result = ['outer-middleware-ingress']
+            result = ["outer-middleware-ingress"]
             result.extend(handler(request))
-            result.append('outer-middleware-egress')
+            result.append("outer-middleware-egress")
             return result
 
     class SecondMiddleware:
         def __call__(self, request, handler):
-            result = ['second-middleware-ingress']
+            result = ["second-middleware-ingress"]
             result.extend(handler(request))
-            result.append('second-middleware-egress')
+            result.append("second-middleware-egress")
             return result
 
     # Verify custom default middleware
     class DefaultMiddleware:
         def __call__(self, request, handler):
-            result = ['default-middleware-ingress']
+            result = ["default-middleware-ingress"]
             # We need to get past the DalMethodResolverMiddleware
             # which sets the `dal_method` attribute to
             # the method that has to be called
             request.dal_method = test_method
             result.extend(handler(request))
-            result.append('default-middleware-egress')
+            result.append("default-middleware-egress")
             return result
 
     dm = DataManager()
 
-    dal = DataAccessLayer(data_manager=dm, middleware=[OuterMiddleware(), SecondMiddleware()],
-        default_middleware=(DefaultMiddleware(),))
+    dal = DataAccessLayer(
+        data_manager=dm,
+        middleware=[OuterMiddleware(), SecondMiddleware()],
+        default_middleware=(DefaultMiddleware(),),
+    )
 
     with dm.context():
         result = dal.fake.service.method()
 
     assert result == [
-        'outer-middleware-ingress',
-        'second-middleware-ingress',
-        'default-middleware-ingress',
-        'default-handler-call',
-        'default-middleware-egress',
-        'second-middleware-egress',
-        'outer-middleware-egress',
+        "outer-middleware-ingress",
+        "second-middleware-ingress",
+        "default-middleware-ingress",
+        "default-handler-call",
+        "default-middleware-egress",
+        "second-middleware-egress",
+        "outer-middleware-egress",
     ]
 
 
@@ -106,7 +118,7 @@ def test_dal_method_middleware_abort():
         middleware_requests.append("test_method_called")
         return True
 
-    class AuthMiddleware():
+    class AuthMiddleware:
         """
         An example middleware for authentication purposes
         """
@@ -116,7 +128,7 @@ def test_dal_method_middleware_abort():
             Simulating an authenticated method to check for
             no exception cases
             """
-            return path[-1].name == 'authenticated_method'
+            return path[-1].name == "authenticated_method"
 
         def __call__(self, request, handler):
             if self.user_is_authenticated(request.path):
@@ -136,8 +148,11 @@ def test_dal_method_middleware_abort():
 
     dm = DataManager()
 
-    dal = DataAccessLayer(data_manager=dm, middleware=[AuthMiddleware()],
-                          default_middleware=(DefaultMiddleware(),))
+    dal = DataAccessLayer(
+        data_manager=dm,
+        middleware=[AuthMiddleware()],
+        default_middleware=(DefaultMiddleware(),),
+    )
 
     with dm.context():
         assert dal.fake.authenticated_method()
@@ -171,13 +186,14 @@ def test_dal_attribute_access_returns_dal_method_requester():
         assert isinstance(thing, DalCommand)
         assert isinstance(thing2, DalCommand)
         assert isinstance(thing3, DalCommand)
-        thing4 = getattr(dal, 'random')
+        thing4 = getattr(dal, "random")
         assert isinstance(thing4, DalCommand)
 
     # also make sure to verify the error case where a context
     # has not been started yet.
-    with pytest.raises(AssertionError):
-        dal.foo.bar.fake
+    fake_method = dal.foo.bar.fake  # No error expected when only referencing
+    with pytest.raises(RuntimeError):
+        fake_method()
 
 
 def test_default_dal_handler(path_segment_factory):
@@ -192,16 +208,11 @@ def test_default_dal_handler(path_segment_factory):
 
     dm = DataManager()
 
-    expected_args = ['foo']
-    expected_kwargs = dict(test='bar')
+    expected_args = ["foo"]
+    expected_kwargs = dict(test="bar")
     with dm.context() as ctx:
         request = DalCommandRequest(
-            ctx,
-            path_segment_factory(),
-            args=expected_args,
-
-
-            kwargs=expected_kwargs
+            ctx, path_segment_factory(), args=expected_args, kwargs=expected_kwargs
         )
         request.dal_method = my_method
 
@@ -221,12 +232,10 @@ def test_dal_middleware_monkeypatch(monkeypatch):
             return "example-foo"
 
     def mock_example_foo(*args):
-        return 'mock value'
+        return "mock value"
 
     dm = DataManager()
-    dm.register_services(
-        example=ExampleService()
-    )
+    dm.register_services(example=ExampleService())
 
     with dm.context() as ctx:
         monkeypatch.setattr(
@@ -237,13 +246,14 @@ def test_dal_middleware_monkeypatch(monkeypatch):
             mock_example_foo,
         )
         result = ctx.dal.example.example_foo()
-        assert result == 'mock value'
+        assert result == "mock value"
 
 
 def test_resolve_empty_path():
     """
     Verify dal_resolver resolves empty path
     """
+
     class SampleService(Service):
         def sample_method(self):
             pass

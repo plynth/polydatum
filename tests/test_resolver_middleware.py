@@ -1,4 +1,5 @@
 import pytest
+
 from polydatum.middleware import DalMethodError
 
 
@@ -13,19 +14,19 @@ def test_dal_resolver_middleware(sub_service_setup):
 
     with dm.context() as ctx:
         demo = ctx.dal.users.profile.sample.example.demo.demo_method()
-        assert demo == 'demo-nested-service'
+        assert demo == "demo-nested-service"
 
         example = ctx.dal.users.profile.sample.example.example_method()
-        assert example == 'example-nested-service'
+        assert example == "example-nested-service"
 
         sample = ctx.dal.users.profile.sample.sample_method()
-        assert sample == 'sample-nested-service'
+        assert sample == "sample-nested-service"
 
         profile = ctx.dal.users.profile.profile_method()
-        assert profile == 'profile-nested-service'
+        assert profile == "profile-nested-service"
 
         users = ctx.dal.users.user_method()
-        assert users == 'user-service'
+        assert users == "user-service"
 
 
 def test_dal_resolver_middleware_invalid_method(sub_service_setup):
