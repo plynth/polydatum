@@ -14,7 +14,6 @@ RUN cd /poetry/ && poetry export --dev -f requirements.txt | "$VIRTUAL_ENV/bin/p
 
 FROM dependencies AS wheel
 COPY . /src/
-RUN rm -f /src/dist/*
 RUN cd /src/ && poetry build -f wheel
 RUN "$VIRTUAL_ENV/bin/pip" install --no-index /src/dist/*.whl
 
