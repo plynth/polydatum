@@ -1,9 +1,6 @@
-from __future__ import absolute_import
-
 import json
 import sys
 
-import six
 from werkzeug.local import LocalStack
 
 from .errors import MiddlewareSetupException, PolydatumException, ResourceSetupException
@@ -235,7 +232,11 @@ class DataAccessContext(object):
                 if exc_type:
                     # An in-context or middleware exception
                     # occurred and will be raised outside the context
-                    six.reraise(exc_type, exc_value, traceback)
+                    if exc_value is None:
+                        exc_value = exc_type()
+                    if exc_value.__traceback__ is not traceback:
+                        raise exc_value.with_traceback(traceback)
+                    raise exc_value
 
             finally:
                 try:

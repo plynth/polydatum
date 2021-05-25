@@ -1,9 +1,5 @@
-from __future__ import absolute_import
-
 import importlib
 import json
-
-import six
 
 
 class Config(object):
@@ -14,7 +10,7 @@ class Config(object):
 
     def __init__(self, opts=None):
         if opts:
-            for k, v in six.iteritems(opts):
+            for k, v in opts.items():
                 object.__setattr__(self, k, v)
 
     def __setattr__(self, key, value):
